@@ -6,6 +6,7 @@ const internSchema = new mongoose.Schema({
   password: { type: String, required: true },
   CGPA: { type: Number, required: true },
   university: { type: String, required: true }, 
+  profilePicture: { type: String }, 
   documents: [{ type: String }], 
   supervisor: { type: mongoose.Schema.Types.ObjectId, ref: 'Supervisor' },
   projects: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Project' }],
