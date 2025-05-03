@@ -4,7 +4,6 @@ const { applyIntern } = require('../controllers/internController');
 const multer = require('multer');
 const path = require('path');
 
-// Set up multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');

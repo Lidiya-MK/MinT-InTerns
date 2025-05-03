@@ -19,6 +19,9 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 app.use('/api/interns', internRoutes);
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/admin', authRoutes);
+
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI, {
@@ -27,6 +30,11 @@ mongoose.connect(process.env.MONGO_URI, {
 })
 .then(() => {
   console.log('MongoDB connected');
+  initializeAdmin();
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 })
 .catch(err => console.error('MongoDB connection error:', err));
+const initializeAdmin = require('./utils/initAdmin');
+
+
+
