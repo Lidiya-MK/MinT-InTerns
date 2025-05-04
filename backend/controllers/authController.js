@@ -18,11 +18,13 @@ exports.loginAdmin = async (req, res) => {
 };
 
 exports.createAdmin = async (req, res) => {
-  const { name, email, password } = req.body;
-
-  const exists = await Administrator.findOne({ email });
-  if (exists) return res.status(400).json({ message: 'Admin already exists' });
-
-  const newAdmin = await Administrator.create({ name, email, password });
-  res.status(201).json({ message: 'Admin created', adminId: newAdmin._id });
-};
+    const { name, email, password } = req.body;
+  
+    const exists = await Administrator.findOne({ email });
+    if (exists) return res.status(400).json({ message: 'Admin already exists' });
+  
+    const newAdmin = await Administrator.create({ name, email, password });
+  
+    res.status(201).json({ message: 'Admin created', adminId: newAdmin._id });
+  };
+  

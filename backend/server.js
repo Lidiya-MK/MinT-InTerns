@@ -21,7 +21,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/interns', internRoutes);
 const authRoutes = require('./routes/authRoutes');
 app.use('/api/admin', authRoutes);
-
+const adminRoutes = require('./routes/adminRoutes');
+app.use('/api/admin', adminRoutes);
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI, {
