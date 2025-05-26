@@ -1,1 +1,18 @@
 @import "tailwindcss";
+
+.drop-shadow-glow {
+  text-shadow: 0 0 8px rgba(129, 140, 248, 0.8);
+}
+
+.animate-text-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    text-shadow: 0 0 8px rgba(129, 140, 248, 0.8);
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(129, 140, 248, 1);
+  }
+}

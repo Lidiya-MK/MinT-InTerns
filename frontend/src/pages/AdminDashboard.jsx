@@ -1,0 +1,160 @@
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { toast } from "react-hot-toast";
+
+import DashboardCards from "../components/DashboardCards";
+import Registration from "../components/Registration";
+import PendingInternList from "../components/PendingInternList";
+import Sidebar from "../components/sidebar";
+import Settings from "../components/Settings"; 
+
+function AdminDashboard() {
+  const [interns, setInterns] = useState([]);
+  const [filter, setFilter] = useState("all");
+  const [view, setView] = useState("dashboard");
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [freeSlots, setFreeSlots] = useState(0);
+
+  useEffect(() => {
+    const fetchPendingInterns = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get("http://localhost:5000/api/admin/interns/pending", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setInterns(res.data);
+      } catch (err) {
+        console.error("Error fetching interns:", err);
+      }
+    };
+
+    if (view === "dashboard") fetchPendingInterns();
+  }, [view]);
+
+  useEffect(() => {
+    const fetchAcceptedInterns = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get("http://localhost:5000/api/admin/interns/accepted", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setInterns(res.data);
+      } catch (err) {
+        console.error("Error fetching interns:", err);
+      }
+    };
+
+    if (view === "intern") fetchAcceptedInterns();
+  }, [view]);
+
+  const handleRegisterSubmit = async (e) => {
+    e.preventDefault();
+    const { name, email, password, confirmPassword } = formData;
+
+    if (!name || !email || !password || !confirmPassword)
+      return toast.error("Please fill in all fields");
+    if (password.length !== 6) return toast.error("Password must be 6 digits");
+    if (password !== confirmPassword) return toast.error("Passwords do not match");
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.post(
+        "http://localhost:5000/api/admin/register",
+        { name, email, password },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Administrator registered successfully");
+      setFormData({ name: "", email: "", password: "", confirmPassword: "" });
+    } catch (error) {
+      toast.error("Registration failed", error);
+    }
+  };
+
+  
+
+  const handleRegisterSupervisor = async (e) => {
+    e.preventDefault();
+    const { name, email, password, confirmPassword } = formData;
+
+    if (!name || !email || !password || !confirmPassword)
+      return toast.error("Please fill in all fields");
+    if (password.length !== 6) return toast.error("Password must be 6 digits");
+    if (password !== confirmPassword) return toast.error("Passwords do not match");
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.post(
+        "http://localhost:5000/api/admin/register/supervisor",
+        { name, email, password },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Supervisor registered successfully");
+      setFormData({ name: "", email: "", password: "", confirmPassword: "" });
+    } catch (error) {
+      toast.error("Registration failed", error);
+    }
+  };
+
+
+
+useEffect(() => {
+  const fetchFreeSlots = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await axios.get("http://localhost:5000/api/admin/cohorts/active/available-slots", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setFreeSlots(res.data.freeSlots);
+    } catch (err) {
+      console.error("Error fetching available slots:", err);
+    }
+  };
+
+  if (view === "dashboard") fetchFreeSlots();
+}, [view]);
+
+  return (
+    <div className="flex h-screen bg-[#272a2b]">
+      <Sidebar setView={setView} />
+
+      <main className="flex-1 p-8 overflow-y-auto">
+        <header className="mb-8">
+          <h2 className="text-3xl font-bold text-white">Admin Dashboard</h2>
+          <p className="text-gray-200">Welcome Back Mr. Denber</p>
+        </header>
+
+        {view === "register-admin" || view === "register-supervisor" ? (
+          <Registration
+            view={view}
+            formData={formData}
+            setFormData={setFormData}
+            handleRegisterSubmit={handleRegisterSubmit}
+            handleRegisterSupervisor={handleRegisterSupervisor}
+          />
+        ) : view === "settings" ? ( 
+          <Settings />
+        ) : (
+          <>
+            <DashboardCards interns={interns} freeSlots={freeSlots} />
+            <PendingInternList interns={interns} filter={filter} setFilter={setFilter} setInterns={setInterns} />
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
+
+export default AdminDashboard;
