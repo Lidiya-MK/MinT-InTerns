@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 
-import Sidebar from "../components/adminComponents/Sidebar";
-import DashboardCards from "../components/adminComponents/DashboardCards";
-import PendingInternList from "../components/adminComponents/PendingInternList";
-import Registration from "../components/adminComponents/Registration";
-import Settings from "../components/adminComponents/Settings";
+import Sidebar from "../../components/adminComponents/Sidebar";
+import DashboardCards from "../../components/adminComponents/DashboardCards";
+import PendingInternList from "../../components/adminComponents/PendingInternList";
+import Registration from "../../components/adminComponents/Registration";
+import Settings from "../../components/adminComponents/Settings";
 
 function Cohorts() {
   const [cohorts, setCohorts] = useState([]);

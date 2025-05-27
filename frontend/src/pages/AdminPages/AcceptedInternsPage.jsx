@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 
-import Sidebar from "../components/adminComponents/Sidebar";
+import Sidebar from "../../components/adminComponents/Sidebar";
 
 function AcceptedInternsPage() {
   const { cohortId } = useParams();

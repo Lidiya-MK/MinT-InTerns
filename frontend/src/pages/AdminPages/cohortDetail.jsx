@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 
-import Sidebar from "../components/adminComponents/Sidebar";
-import DashboardCards from "../components/adminComponents/DashboardCards";
-import PendingInternList from "../components/adminComponents/PendingInternList";
+import Sidebar from "../../components/adminComponents/Sidebar";
+import DashboardCards from "../../components/adminComponents/DashboardCards";
+import PendingInternList from "../../components/adminComponents/PendingInternList";
 
 function CohortDetailsPage() {
   const { cohortId } = useParams();

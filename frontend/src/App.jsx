@@ -6,17 +6,17 @@ import Home from "./pages/landing";
 import Form from "./pages/form";
 
 // Login Pages
-import InternLogin from "./pages/internLogin";
+import InternLogin from "./pages/InternPages/internLogin";
 import SupervisorLogin from "./pages/supervisorLogin";
-import AdminLogin from "./pages/adminLogin";
+import AdminLogin from "./pages/AdminPages/adminLogin";
 
 // Intern Dashboard
-import InternDashboard from "./pages/internDashboard";
+import InternDashboard from "./pages/InternPages/internDashboard";
 
 // Admin Pages
-import Cohorts from "./pages/cohorts";
-import CohortDetailsPage from "./pages/cohortDetail";
-import AcceptedInternsPage from "./pages/AcceptedInternsPage";
+import Cohorts from "./pages/AdminPages/cohorts";
+import CohortDetailsPage from "./pages/AdminPages/cohortDetail";
+import AcceptedInternsPage from "./pages/AdminPages/AcceptedInternsPage";
 import Registration from "./components/adminComponents/Registration";
 import Settings from "./components/adminComponents/Settings";
 import SupervisorsList from "./components/adminComponents/SupervisorsList";

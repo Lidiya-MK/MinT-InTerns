@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { applyIntern } = require('../controllers/internController');
-const { protect } = require('../middleware/authMiddleware');
 const multer = require('multer');
 const path = require('path');
 
+const { applyIntern, loginIntern } = require('../controllers/internController');
+
+// File storage configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');
@@ -17,6 +18,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
+// Intern Application Route
 router.post(
   '/apply',
   upload.fields([
@@ -26,5 +28,7 @@ router.post(
   applyIntern
 );
 
-module.exports = router;
+// Intern Login Route
+router.post('/login', loginIntern);
 
+module.exports = router;

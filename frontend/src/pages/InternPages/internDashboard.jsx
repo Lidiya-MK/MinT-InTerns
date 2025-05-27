@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import logo from "../assets/logo.png";
+import axios from "axios";
+import logo from "../../assets/logo.png";
+import { toast } from "react-hot-toast";
 
 export default function InternDashboard() {
   const [intern, setIntern] = useState(null);
@@ -7,26 +9,37 @@ export default function InternDashboard() {
   const [projects, setProjects] = useState([]);
 
   useEffect(() => {
-    const mockIntern = {
-      name: "Abebe Kebede",
-      email: "abebe@example.com",
-      status: "accepted",
+    const fetchIntern = async () => {
+      try {
+        const token = localStorage.getItem("internToken");
+        if (!token) return toast.error("No token found. Please login again.");
+
+        const { data } = await axios.get("http://localhost:5000/api/intern/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        setIntern(data);
+
+        // Optional: fetch tasks/projects here if available from backend
+        setTasks([
+          { id: 1, title: "Complete onboarding", status: "done" },
+          { id: 2, title: "Submit weekly report", status: "in progress" },
+          { id: 3, title: "Fix bugs in dashboard", status: "todo" },
+        ]);
+
+        setProjects([
+          { id: 1, title: "Mentorship Platform", progress: 80 },
+          { id: 2, title: "Internal Chat App", progress: 45 },
+        ]);
+      } catch (error) {
+        toast.error("Failed to load intern data.");
+        console.error(error);
+      }
     };
 
-    const mockTasks = [
-      { id: 1, title: "Complete onboarding", status: "done" },
-      { id: 2, title: "Submit weekly report", status: "in progress" },
-      { id: 3, title: "Fix bugs in dashboard", status: "todo" },
-    ];
-
-    const mockProjects = [
-      { id: 1, title: "Mentorship Platform", progress: 80 },
-      { id: 2, title: "Internal Chat App", progress: 45 },
-    ];
-
-    setIntern(mockIntern);
-    setTasks(mockTasks);
-    setProjects(mockProjects);
+    fetchIntern();
   }, []);
 
   const getStatusColor = (status) => {
@@ -46,10 +59,12 @@ export default function InternDashboard() {
     <div className="min-h-screen bg-[#0f0f0f] text-white p-6">
       <header className="mb-10 flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-extrabold tracking-tight">👋 Welcome Back, {intern?.name || "Intern"}</h1>
-          <p className="text-gray-300 mt-2">Your personalized project and task dashboard</p>
+          <h1 className="text-4xl font-extrabold tracking-tight">
+            👋 Welcome Back, {intern?.name || "Intern"}
+          </h1>
+          <p className="text-gray-300 mt-2">Your personalized dashboard</p>
         </div>
-        <img src={logo} alt="System Logo" className="h-16 " />
+        <img src={logo} alt="System Logo" className="h-16" />
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
@@ -90,7 +105,7 @@ export default function InternDashboard() {
         </div>
       </div>
 
-      {/* Project Section */}
+      {/* Projects */}
       <section className="bg-[#1a1a1a] p-6 rounded-xl border border-[#144145]">
         <h2 className="text-xl font-bold mb-4">🚀 Your Projects</h2>
         <div className="space-y-5">

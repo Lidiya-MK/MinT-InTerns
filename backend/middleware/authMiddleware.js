@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const Administrator = require('../models/Administrator');
 
+
 const protect = async (req, res, next) => {
   let token;
 
