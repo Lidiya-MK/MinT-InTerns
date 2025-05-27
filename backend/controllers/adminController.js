@@ -1,5 +1,6 @@
 const Intern = require('../models/Intern');
 const Supervisor = require('../models/Supervisor');
+const Administrator = require('../models/Administrator');
 const bcrypt = require('bcryptjs');
 const Cohort = require('../models/Cohort');
 const mongoose = require('mongoose');
@@ -244,3 +245,113 @@ exports.deleteCohort = async (req, res) => {
 };
 
 
+
+exports.getInternsByCohort = async (req, res) => {
+  try {
+    const { cohortId } = req.params;
+
+    const interns = await Intern.find({ cohort: cohortId }).populate('cohort', 'name'); 
+
+    res.status(200).json(interns);
+  } catch (error) {
+    console.error('Error fetching interns by cohort:', error);
+    res.status(500).json({ error: 'Failed to fetch interns for this cohort' });
+  }
+};
+
+
+
+exports.getPendingOrRejectedInternsByCohort = async (req, res) => {
+  try {
+    const { cohortId } = req.params;
+
+    const interns = await Intern.find({
+      cohort: cohortId,
+      status: { $in: ['pending', 'rejected'] }
+    }).populate('cohort', 'name');
+
+    if (interns.length === 0) {
+      return res.status(200).json({ message: 'No pending or rejected interns found for this cohort' });
+    }
+
+    res.status(200).json(interns);
+  } catch (error) {
+    console.error('Error fetching pending/rejected interns by cohort:', error);
+    res.status(500).json({ error: 'Failed to fetch pending/rejected interns for this cohort' });
+  }
+};
+
+exports.getAcceptedInternsByCohort = async (req, res) => {
+  try {
+    const { cohortId } = req.params;
+
+    const interns = await Intern.find({
+      cohort: cohortId,
+      status: 'accepted'
+    }).populate('cohort', 'name');
+
+    if (interns.length === 0) {
+      return res.status(200).json({ message: 'No accepted interns found for this cohort' });
+    }
+
+    res.status(200).json(interns);
+  } catch (error) {
+    console.error('Error fetching accepted interns by cohort:', error);
+    res.status(500).json({ error: 'Failed to fetch accepted interns for this cohort' });
+  }
+};
+
+
+exports.getAcceptedInternCountByCohort = async (req, res) => {
+  try {
+    const { cohortId } = req.params;
+
+    const count = await Intern.countDocuments({
+      cohort: cohortId,
+      status: 'accepted'
+    });
+
+    res.status(200).json({ acceptedCount: count });
+  } catch (error) {
+    console.error('Error counting accepted interns:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
+exports.getPendingInternCountByCohort = async (req, res) => {
+  try {
+    const { cohortId } = req.params;
+
+    const count = await Intern.countDocuments({
+      cohort: cohortId,
+      status: 'pending'
+    });
+
+    res.status(200).json({ pendingCount: count });
+  } catch (error) {
+    console.error('Error counting pending interns:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
+exports.getAllSupervisors = async (req, res) => {
+  try {
+    const supervisors = await Supervisor.find().select('-password'); 
+    res.status(200).json(supervisors);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to fetch supervisors' });
+  }
+};
+
+exports.getAllAdmins = async (req, res) => {
+  try {
+    const admins = await Administrator.find().select('-password'); 
+    res.status(200).json(admins);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to fetch administrators' });
+  }
+};

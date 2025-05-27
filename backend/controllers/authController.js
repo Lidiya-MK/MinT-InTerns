@@ -1,5 +1,10 @@
 const Administrator = require('../models/Administrator');
+
 const generateToken = require('../utils/generateToken');
+  
+
+
+
 
 exports.loginAdmin = async (req, res) => {
   const { email, password } = req.body;
@@ -28,3 +33,4 @@ exports.createAdmin = async (req, res) => {
     res.status(201).json({ message: 'Admin created', adminId: newAdmin._id });
   };
   
+

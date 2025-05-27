@@ -23,6 +23,10 @@ const authRoutes = require('./routes/authRoutes');
 app.use('/api/admin', authRoutes);
 const adminRoutes = require('./routes/adminRoutes');
 app.use('/api/admin', adminRoutes);
+const cohortRoutes = require('./routes/cohortRoutes');
+app.use('/api/cohort', cohortRoutes);
+
+
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI, {

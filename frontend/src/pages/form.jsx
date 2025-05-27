@@ -1,6 +1,7 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import * as Label from "@radix-ui/react-label"
 import toast from "react-hot-toast"
+
 const universities = [
   "Adama Science and Technology University",
   "Addis Ababa Science & Technology University",
@@ -42,7 +43,24 @@ const Form = () => {
     cgpa: "",
     profile: null,
     documents: [],
+    cohort: "",
   })
+
+  const [cohorts, setCohorts] = useState([])
+
+  useEffect(() => {
+    const fetchCohorts = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/cohort")
+        const data = await res.json()
+        setCohorts(data)
+      } catch (err) {
+        console.error("Failed to fetch cohorts:", err)
+      }
+    }
+
+    fetchCohorts()
+  }, [])
 
   const handleChange = (e) => {
     const { name, value, files } = e.target
@@ -64,6 +82,14 @@ const Form = () => {
     formData.append("email", form.email)
     formData.append("university", form.university)
     formData.append("CGPA", form.cgpa)
+   const selectedCohort = cohorts.find((c) => c.name === form.cohort)
+if (!selectedCohort) {
+  toast.error("Invalid cohort selected.")
+  return
+}
+formData.append("cohort", selectedCohort._id)
+
+    
 
     if (form.profile) {
       formData.append("profilePicture", form.profile)
@@ -89,10 +115,10 @@ const Form = () => {
           background: "#D1FAE5",
           color: "#065F46",
           border: "1px solid #34D399",
-          fontWeight: "bold"
+          fontWeight: "bold",
         },
       })
-      
+
       console.log(data)
     } catch (err) {
       console.error(err)
@@ -110,7 +136,9 @@ const Form = () => {
         className="max-w-3xl mx-auto bg-white p-10 rounded-2xl shadow-lg border space-y-8"
       >
         <div>
-          <Label.Root htmlFor="name" className="block mb-2 font-medium">Full Name</Label.Root>
+          <Label.Root htmlFor="name" className="block mb-2 font-medium">
+            Full Name
+          </Label.Root>
           <input
             type="text"
             name="name"
@@ -123,7 +151,9 @@ const Form = () => {
         </div>
 
         <div>
-          <Label.Root htmlFor="email" className="block mb-2 font-medium">Email</Label.Root>
+          <Label.Root htmlFor="email" className="block mb-2 font-medium">
+            Email
+          </Label.Root>
           <input
             type="email"
             name="email"
@@ -136,7 +166,9 @@ const Form = () => {
         </div>
 
         <div>
-          <Label.Root htmlFor="university" className="block mb-2 font-medium">University</Label.Root>
+          <Label.Root htmlFor="university" className="block mb-2 font-medium">
+            University
+          </Label.Root>
           <input
             list="university-list"
             name="university"
@@ -155,7 +187,9 @@ const Form = () => {
         </div>
 
         <div>
-          <Label.Root htmlFor="cgpa" className="block mb-2 font-medium">CGPA (0 - 4)</Label.Root>
+          <Label.Root htmlFor="cgpa" className="block mb-2 font-medium">
+            CGPA (0 - 4)
+          </Label.Root>
           <input
             type="number"
             name="cgpa"
@@ -171,7 +205,31 @@ const Form = () => {
         </div>
 
         <div>
-          <Label.Root htmlFor="profile" className="block mb-2 font-medium">Profile Picture</Label.Root>
+          <Label.Root htmlFor="cohort" className="block mb-2 font-medium">
+            Select Internship Cohort
+          </Label.Root>
+          <select
+            name="cohort"
+            id="cohort"
+            value={form.cohort}
+            onChange={handleChange}
+            required
+            className="w-full p-3 rounded-lg border bg-zinc-100"
+          >
+            <option value="">-- Select a cohort --</option>
+            {cohorts.map((cohort) => (
+             <option key={cohort._id} value={cohort.name}>
+  {cohort.name}
+</option>
+
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <Label.Root htmlFor="profile" className="block mb-2 font-medium">
+            Profile Picture
+          </Label.Root>
           <input
             type="file"
             name="profile"
@@ -184,12 +242,15 @@ const Form = () => {
         </div>
 
         <div>
-          <Label.Root htmlFor="documents" className="block mb-2 font-medium">Upload Supporting Documents</Label.Root>
+          <Label.Root htmlFor="documents" className="block mb-2 font-medium">
+            Upload a clear image of your latest university transcript
+          </Label.Root>
           <input
             type="file"
             name="documents"
             id="documents"
             multiple
+            accept="image/*,application/pdf"
             onChange={handleChange}
             className="w-full p-2 rounded-lg border bg-zinc-100"
           />

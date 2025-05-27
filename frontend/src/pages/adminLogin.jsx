@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import LoginLayout from "../components/loginLayout";
+import LoginLayout from "../components/adminComponents/loginLayout";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
@@ -37,7 +37,7 @@ const AdminLogin = () => {
       });
   
       setTimeout(() => {
-        navigate("/admindashboard");
+        navigate("/admin/Cohorts");
       }, 1500);
     } catch (err) {
       toast.error(err.message, {

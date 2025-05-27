@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import LoginLayout from "../components/loginLayout";
+import LoginLayout from "../components/adminComponents/loginLayout";
 import { Link } from "react-router-dom";
 
 const InternLogin = () => {

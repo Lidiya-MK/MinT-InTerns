@@ -1,9 +1,9 @@
 import React from "react";
-import { Card, CardContent } from "../components/card2";
-import { Input } from "../components/input";
+import { Card, CardContent } from "../GeneralComponents/card2";
+import { Input } from "../GeneralComponents/input";
 import { Label } from "@radix-ui/react-label";
-import { Button } from "../components/button";
-import logo from "../assets/logo.png";
+import { Button } from "../GeneralComponents/button";
+import logo from "../../assets/logo.png";
 
 const LoginLayout = ({ title, onSubmit, email, setEmail, password, setPassword, footer }) => {
   return (

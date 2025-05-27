@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { applyIntern } = require('../controllers/internController');
+const { protect } = require('../middleware/authMiddleware');
 const multer = require('multer');
 const path = require('path');
 

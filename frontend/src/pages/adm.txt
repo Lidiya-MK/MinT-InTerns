@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 
-import DashboardCards from "../components/DashboardCards";
-import Registration from "../components/Registration";
-import PendingInternList from "../components/PendingInternList";
-import Sidebar from "../components/sidebar";
-import Settings from "../components/Settings"; 
+import DashboardCards from "../components/adminComponents/DashboardCards";
+import Registration from "../components/adminComponents/Registration";
+import PendingInternList from "../components/adminComponents/PendingInternList";
+import Sidebar from "../components/adminComponents/sidebar";
+import Settings from "../components/adminComponents/Settings"; 
 
 function AdminDashboard() {
   const [interns, setInterns] = useState([]);

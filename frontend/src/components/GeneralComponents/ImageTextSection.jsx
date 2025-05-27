@@ -1,6 +1,6 @@
 // src/components/ImageTextSection.jsx
 import React from "react"
-import interns from "../assets/intern00.png" // Replace with your image
+import interns from "../../assets/intern00.png" // Replace with your image
 
 const ImageTextSection = () => {
   return (

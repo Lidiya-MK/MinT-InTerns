@@ -1,7 +1,7 @@
 // src/components/Hero.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "../assets/logo.png";
+import logo from "../../assets/logo.png";
 import { Award, Briefcase, Users } from "lucide-react";
 
 const features = [
@@ -73,7 +73,12 @@ const Hero = () => {
       </div>
 
       {/* Features */}
-    <section className="bg-[#f8f9fa] py-20 px-6 md:px-12 text-center">
+  
+
+      {/* Announcement Section */}
+    <section className="bg-[#f8f9fa] py-16 px-6 md:px-12 flex justify-center">
+  <div className="bg-[#144145] text-white rounded-3xl px-8 py-12 max-w-4xl w-full shadow-lg text-center">
+
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10">
         {features.map((feature, idx) => (
           <div
@@ -88,19 +93,11 @@ const Hero = () => {
           </div>
         ))}
       </div>
-    </section>
-
-      {/* Announcement Section */}
-    <section className="bg-[#f8f9fa] py-16 px-6 md:px-12 flex justify-center">
-  <div className="bg-[#144145] text-white rounded-3xl px-8 py-12 max-w-4xl w-full shadow-lg text-center">
-    <h2 className="text-3xl font-bold mb-4">🚨 Don’t Miss Out!</h2>
-    <p className="text-lg">
-      Be part of the change. Apply for <strong>Cohort 3</strong> before{" "}
-      <span className="text-[#D25B24] font-semibold">June 12</span>.
-    </p>
+    <h2 className="text-3xl font-bold mb-4 pt-8">🚨 Don’t Miss Out!</h2>
+    
     <button
       onClick={() => navigate("/apply")}
-      className="mt-6 bg-[#D25B24] hover:bg-[#b3471c] text-white px-6 py-3 rounded-lg font-semibold transition duration-200"
+      className="mt-3 bg-[#D25B24] hover:bg-[#b3471c] text-white px-6 py-3 rounded-lg font-semibold transition duration-200"
     >
       Submit Application
     </button>

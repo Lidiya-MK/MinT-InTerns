@@ -11,8 +11,7 @@ const internSchema = new mongoose.Schema({
   supervisor: { type: mongoose.Schema.Types.ObjectId, ref: 'Supervisor' },
   projects: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Project' }],
   status: { type: String, enum: ['pending', 'accepted', 'rejected'], default: 'pending' },
-
-  cohort: { type: mongoose.Schema.Types.ObjectId, ref: 'Cohort' }
+  cohort: { type: mongoose.Schema.Types.ObjectId, ref: 'Cohort' , required:true}
 }, { timestamps: true });
 
 module.exports = mongoose.model('Intern', internSchema);

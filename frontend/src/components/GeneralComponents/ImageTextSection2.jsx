@@ -1,5 +1,5 @@
 import React from "react";
-import interns from "../assets/intern01.png";
+import interns from "../../assets/intern01.png";
 
 const ImageTextSection = () => {
   return (

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const CohortSchema = new mongoose.Schema({
-  name: { type: String, required: true }, 
+  name: { type: String, required: true, unique: true }, 
   applicationStart: { type: Date, required: true },
   applicationEnd: { type: Date, required: true },
   cohortStart: { type: Date, required: true },
