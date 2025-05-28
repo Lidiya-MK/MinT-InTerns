@@ -7,11 +7,12 @@ import Form from "./pages/form";
 
 // Login Pages
 import InternLogin from "./pages/InternPages/internLogin";
-import SupervisorLogin from "./pages/supervisorLogin";
+import SupervisorLogin from "./pages/SupervisorPages/supervisorLogin";
 import AdminLogin from "./pages/AdminPages/adminLogin";
 
 // Intern Dashboard
 import InternDashboard from "./pages/InternPages/internDashboard";
+import SupervisorDashboard from "./pages/SupervisorPages/SupervisorDashboard";
 
 // Admin Pages
 import Cohorts from "./pages/AdminPages/cohorts";
@@ -49,7 +50,8 @@ function App() {
         <Route path="/admin/administrators" element={<AdministratorsList />} />
 
         {/* Intern Dashboard */}
-        <Route path="/internDashboard" element={<InternDashboard />} />
+        <Route path="/internDashboard/:id" element={<InternDashboard />} />
+         <Route path="/supervisorDashboard" element={<SupervisorDashboard />} />
 
         {/* Admin Dashboard */}
         <Route path="/admin/cohorts" element={<Cohorts />} />

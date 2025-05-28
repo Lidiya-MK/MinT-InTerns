@@ -19,8 +19,12 @@ const InternLogin = () => {
       });
 
       toast.success("Login successful");
+
+      // Save token
       localStorage.setItem("internToken", data.token);
-      navigate("/internDashboard"); // ✅ Updated path
+
+      // Navigate to dashboard with intern ID in the URL
+      navigate(`/internDashboard/${data._id}`);
     } catch (error) {
       const message =
         error.response?.data?.message || "Login failed. Please try again.";

@@ -68,3 +68,20 @@ exports.loginIntern = async (req, res) => {
     res.status(500).json({ error: 'Something went wrong' });
   }
 };
+
+exports.getInternById = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const intern = await Intern.findById(id).select('-password'); // Exclude password
+
+    if (!intern) {
+      return res.status(404).json({ message: 'Intern not found' });
+    }
+
+    res.status(200).json(intern);
+  } catch (error) {
+    console.error('Error fetching intern by ID:', error);
+    res.status(500).json({ error: 'Something went wrong' });
+  }
+};
