@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
+import { FiSearch } from "react-icons/fi";
 import defaultAvatar from "../../assets/default-avatar.png";
 import logo from "../../assets/logo.png";
 import placeholderImage from "../../assets/placeholder.png";
@@ -31,9 +32,7 @@ export default function SupervisorDashboard() {
         const response = await fetch(
           `http://localhost:5000/api/supervisor/cohort/${cohortId}/interns`,
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` },
           }
         );
         const data = await response.json();
@@ -52,7 +51,7 @@ export default function SupervisorDashboard() {
           setInterns([]);
         }
       } catch (error) {
-        toast.error("Error fetching interns.", error);
+        toast.error("Error fetching interns.",error);
         setInterns([]);
       } finally {
         setLoading(false);
@@ -87,22 +86,33 @@ export default function SupervisorDashboard() {
   return (
     <div className="min-h-screen bg-[#1a1a1a] text-white">
       {/* Header */}
-      <header className="w-full bg-white text-black  py-4 flex items-center  rounded-b-3xl shadow-md">
-        <img src={logo} alt="MiNT InTerns" className="h-10 w-auto" />
-        <h1 className="text-3xl font-semibold text-black -mx-8">Welcome, {supervisorName}</h1>
+      <header className="w-full bg-white text-black py-4 px-6 flex items-center justify-between rounded-b-3xl shadow-md">
+        <div className="flex items-center gap-4">
+          <img src={logo} alt="MiNT InTerns" className="h-10 w-auto" />
+          <h1 className="text-3xl font-semibold text-black -ml-12">Welcome, {supervisorName}</h1>
+        </div>
+        <button
+          onClick={() => setShowProjectForm(true)}
+          className="px-4 py-2 border border-[#FFA645] text-[#FFA645] hover:bg-[#FFA645] hover:text-black font-semibold rounded-2xl shadow transition"
+        >
+          + New Project
+        </button>
       </header>
 
       {/* Main content */}
       <div className="p-6 flex flex-col lg:flex-row gap-8 items-start">
         {/* Left Panel */}
         <div className="lg:w-1/2">
-          <input
-            type="text"
-            placeholder="Search interns by name or email..."
-            className="w-full p-2 rounded bg-[#1f1f1f] text-white border border-gray-600 mb-4"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+          <div className="relative mb-4">
+            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search interns by name or email..."
+              className="w-full p-2 pl-10 rounded bg-[#1f1f1f] text-white border border-gray-600"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
 
           {loading ? (
             <p className="text-gray-400">Loading interns...</p>
@@ -166,31 +176,23 @@ export default function SupervisorDashboard() {
         {/* Right Panel */}
         <div className="lg:w-1/2 flex flex-col justify-start bg-[#2a2a2a] p-6 rounded-lg shadow-lg border border-[#FFA645] mt-4 lg:mt-2">
           {!showProjectForm ? (
-            <>
-              <button
-                onClick={() => setShowProjectForm(true)}
-                className="px-5 py-3 border border-[#FFA645] text-[#FFA645] hover:bg-[#FFA645] hover:text-black font-semibold rounded-2xl shadow transition"
-              >
-                + New Project
-              </button>
-              <div className="mt-6 flex flex-col items-center justify-center">
-                {projects.length === 0 ? (
-                  <div className="text-center">
-                    <img src={placeholderImage} alt="No Projects" className="mx-auto w-40 opacity-60" />
-                    <p className="text-gray-400 mt-2">No projects to show</p>
-                  </div>
-                ) : (
-                  <ul className="space-y-2">
-                    {projects.map((project, index) => (
-                      <li key={index} className="bg-[#1f1f1f] p-3 rounded border border-gray-600">
-                        <h3 className="text-lg font-semibold text-[#FFA645]">{project.name}</h3>
-                        <p className="text-sm text-gray-400">{project.description}</p>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </>
+            <div className="mt-6 flex flex-col items-center justify-center">
+              {projects.length === 0 ? (
+                <div className="text-center">
+                  <img src={placeholderImage} alt="No Projects" className="mx-auto w-40 opacity-60" />
+                  <p className="text-gray-400 mt-2">No projects to show</p>
+                </div>
+              ) : (
+                <ul className="space-y-2">
+                  {projects.map((project, index) => (
+                    <li key={index} className="bg-[#1f1f1f] p-3 rounded border border-gray-600">
+                      <h3 className="text-lg font-semibold text-[#FFA645]">{project.name}</h3>
+                      <p className="text-sm text-gray-400">{project.description}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           ) : (
             <>
               <div className="flex justify-between items-center mb-4">
@@ -219,13 +221,17 @@ export default function SupervisorDashboard() {
                   className="w-full p-2 rounded-2xl bg-[#1f1f1f] text-white border border-[#74C2E1]"
                 />
 
-                <input
-                  type="text"
-                  placeholder="Search team lead..."
-                  value={teamLeadSearch}
-                  onChange={(e) => setTeamLeadSearch(e.target.value)}
-                  className="w-full p-2 rounded-2xl bg-[#1f1f1f] text-white border border-[#74C2E1]"
-                />
+                <div className="relative">
+                  <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search team lead..."
+                    value={teamLeadSearch}
+                    onChange={(e) => setTeamLeadSearch(e.target.value)}
+                    className="w-full p-2 pl-10 rounded-2xl bg-[#1f1f1f] text-white border border-[#74C2E1]"
+                  />
+                </div>
+
                 <select
                   value={newProject.teamLead}
                   onChange={(e) => setNewProject((prev) => ({ ...prev, teamLead: e.target.value }))}
