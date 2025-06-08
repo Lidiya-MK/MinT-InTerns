@@ -70,8 +70,8 @@ exports.createProject = async (req, res) => {
       leader,
       members,
       supervisor: supervisorId,
-      status: 'open', // default
-      outcome: 'unknown' // default
+      status: 'open', 
+      outcome: 'unknown' 
     });
 
     await newProject.save();
@@ -118,5 +118,28 @@ exports.getOngoingCohorts = async (req, res) => {
   } catch (error) {
     console.error('Error fetching ongoing cohorts:', error);
     res.status(500).json({ error: 'Failed to fetch ongoing cohorts' });
+  }
+};
+
+
+exports.getProjectsBySupervisor = async (req, res) => {
+  try {
+    const supervisorId = req.params.supervisorId;
+
+    // Validate if supervisor exists
+    const supervisor = await Supervisor.findById(supervisorId);
+    if (!supervisor) {
+      return res.status(404).json({ message: "Supervisor not found." });
+    }
+
+    const projects = await Project.find({ supervisor: supervisorId })
+      .populate('leader', 'name email') 
+      .populate('members', 'name email') 
+      .sort({ createdAt: -1 }); 
+
+    res.status(200).json(projects);
+  } catch (error) {
+    console.error("Error fetching projects by supervisor:", error);
+    res.status(500).json({ message: "Failed to fetch projects." });
   }
 };

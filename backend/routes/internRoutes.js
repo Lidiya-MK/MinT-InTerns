@@ -4,9 +4,25 @@ const multer = require('multer');
 const path = require('path');
 const { protect } = require('../middleware/internAuth');
 
-const { applyIntern, loginIntern, getInternById, createProject,getAllSupervisors } = require('../controllers/internController');
+const {
+  applyIntern,
+  loginIntern,
+  getInternById,
+  getProjectsByInternId,
+  addMilestone,
+  editMilestone,
+  deleteMilestone,
+  addSubTask,
+  editSubTask,
+  deleteSubTask,
+  markSubTaskCompleted,
+  markSubTaskOngoing,
+  setMilestoneOngoing,
+  setMilestoneCompleted
+  
+} = require('../controllers/internController');
 
-// File storage configuration
+// Multer file storage configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');
@@ -19,7 +35,9 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// Intern Application Route
+// ─────────────────────────────────────────────
+// Intern Core Routes
+// ─────────────────────────────────────────────
 router.post(
   '/apply',
   upload.fields([
@@ -29,9 +47,29 @@ router.post(
   applyIntern
 );
 
-// Intern Login Route
 router.post('/login', loginIntern);
 router.get('/:id', protect, getInternById);
+router.get('/:internId/projects', protect, getProjectsByInternId);
+
+// ─────────────────────────────────────────────
+// Milestone & Subtask Routes (from InternController)
+// ─────────────────────────────────────────────
+
+// Milestones
+router.post('/addms', protect, addMilestone);
+router.put('/:projectId/editms', protect, editMilestone);
+router.delete('/:projectId/deletems', protect, deleteMilestone);
+
+// Subtasks
+router.post('/addst', protect, addSubTask);
+router.put('/:milestoneId/editst', protect, editSubTask);
+router.delete('/:milestoneId/deletest', protect, deleteSubTask);
+
+// Task status management
+router.patch('/:milestoneId/stcompleted', protect, markSubTaskCompleted);
+router.patch('/:milestoneId/stongoing', protect, markSubTaskOngoing);
+router.patch('/:projectId/set-ongoing', protect,setMilestoneOngoing);
+router.patch('/:projectId/set-completed', protect, setMilestoneCompleted);
 
 
 module.exports = router;

@@ -3,348 +3,322 @@ import { useParams, Link } from "react-router-dom";
 import axios from "axios";
 import logo from "../../assets/logo.png";
 import { toast } from "react-hot-toast";
-import { MessageCircle } from "lucide-react";
-import { FiSend} from "react-icons/fi";
-
+import { FiSend, FiEdit, FiTrash2, FiCheck, FiPlus } from "react-icons/fi";
+import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
+import "react-circular-progressbar/dist/styles.css";
 
 export default function InternDashboard() {
   const { id } = useParams();
   const [intern, setIntern] = useState(null);
   const [projects, setProjects] = useState([]);
-  const [editing, setEditing] = useState(false);
-  const [updatedInfo, setUpdatedInfo] = useState({});
-  const [milestoneInput, setMilestoneInput] = useState({});
-  const [subtaskInput, setSubtaskInput] = useState({});
+  const [milestoneInputs, setMilestoneInputs] = useState({});
+  const [subtaskInputs, setSubtaskInputs] = useState({});
+
+  const [activeTab, setActiveTab] = useState("projects");
 
   useEffect(() => {
-    const fetchIntern = async () => {
-      try {
-        const token = localStorage.getItem("internToken");
-        if (!token || !id) return toast.error("Missing credentials. Please login again.");
-
-        const { data } = await axios.get(`http://localhost:5000/api/interns/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        setIntern(data);
-        setUpdatedInfo({
-          name: data.name,
-          email: data.email,
-          CGPA: data.CGPA,
-          university: data.university,
-        });
-
-        setProjects([
-          {
-            id: 1,
-            title: "Mentorship Platform",
-            milestones: [
-              {
-                id: 1,
-                title: "UI Design",
-                status: "completed",
-                subtasks: [
-                  { id: 1, title: "Design login screen", status: "completed", completedBy: "Abdi" },
-                  { id: 2, title: "Design dashboard", status: "completed", completedBy: "Lidiya" }
-                ]
-              },
-              {
-                id: 2,
-                title: "Backend API",
-                status: "ongoing",
-                subtasks: [
-                  { id: 1, title: "Setup DB", status: "ongoing", completedBy: null }
-                ]
-              }
-            ]
-          }
-        ]);
-      } catch (error) {
-        toast.error("Failed to load intern data.");
-        console.error(error);
-      }
-    };
-
-    fetchIntern();
+    fetchInternData();
   }, [id]);
 
-  const getImageUrl = (path) => path ? `http://localhost:5000/${path.replace(/\\/g, "/")}` : "/default-avatar.png";
-
-  const handleUpdateProfile = async () => {
+  const fetchInternData = async () => {
     try {
       const token = localStorage.getItem("internToken");
-      await axios.patch(`http://localhost:5000/api/interns/${id}`, updatedInfo, {
+      if (!token || !id) return toast.error("Missing credentials. Please login again.");
+
+      const { data: internData } = await axios.get(`http://localhost:5000/api/interns/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      toast.success("Profile updated");
-      setEditing(false);
+      setIntern(internData);
+     
+
+      const { data: projectsData } = await axios.get(`http://localhost:5000/api/interns/${id}/projects`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setProjects(projectsData);
     } catch (error) {
-      toast.error("Failed to update profile", error);
+      console.error(error);
+      toast.error("Failed to load data. Please try again.");
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "accepted": return "text-[#EA9753]";
-      case "pending": return "text-yellow-400";
-      case "rejected": return "text-red-400";
-      default: return "text-gray-400";
+  const handleMilestoneInputChange = (projectId, value) => {
+    setMilestoneInputs({ ...milestoneInputs, [projectId]: value });
+  };
+
+  const handleSubtaskInputChange = (milestoneId, value) => {
+    setSubtaskInputs({ ...subtaskInputs, [milestoneId]: value });
+  };
+
+  const handleAddMilestone = async (projectId) => {
+    const name = milestoneInputs[projectId]?.trim();
+    if (!name) return toast.error("Milestone name required");
+
+    try {
+      const token = localStorage.getItem("internToken");
+      const config = {
+        headers: { Authorization: `Bearer ${token}` },
+      };
+
+      await axios.post("http://localhost:5000/api/interns/addms", { projectId, name }, config);
+
+      toast.success("Milestone added");
+      setMilestoneInputs({ ...milestoneInputs, [projectId]: "" });
+      fetchInternData();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to add milestone");
     }
   };
 
-  const calculateMilestoneProgress = (milestone) => {
-    const completed = milestone.subtasks.filter((s) => s.status === "completed").length;
-    return milestone.subtasks.length === 0 ? 0 : Math.round((completed / milestone.subtasks.length) * 100);
+  const handleAddSubtask = async (milestoneId) => {
+    const taskName = subtaskInputs[milestoneId]?.trim();
+    if (!taskName) return toast.error("Subtask name required");
+
+    try {
+      const token = localStorage.getItem("internToken");
+      const config = {
+        headers: { Authorization: `Bearer ${token}` },
+      };
+
+      await axios.post("http://localhost:5000/api/interns/addst", { milestoneId, taskName }, config);
+
+      toast.success("Subtask added");
+      setSubtaskInputs({ ...subtaskInputs, [milestoneId]: "" });
+      fetchInternData();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to add subtask");
+    }
   };
 
-  const calculateProjectProgress = (project) => {
-    const totalMilestones = project.milestones.length;
-    if (totalMilestones === 0) return 0;
-    const progressSum = project.milestones.map(calculateMilestoneProgress).reduce((a, b) => a + b, 0);
-    return Math.round(progressSum / totalMilestones);
-  };
+  const getImageUrl = (path) => (path ? `http://localhost:5000/${path.replace(/\\/g, "/")}` : "/default-avatar.png");
 
-  const addMilestone = (projectId, title) => {
-    if (!title) return;
-    setProjects((prev) =>
-      prev.map((project) =>
-        project.id === projectId
-          ? {
-              ...project,
-              milestones: [
-                ...project.milestones,
-                {
-                  id: Date.now(),
-                  title,
-                  status: "ongoing",
-                  subtasks: [],
-                },
-              ],
-            }
-          : project
-      )
-    );
-    toast.success("Milestone added");
-    setMilestoneInput((prev) => ({ ...prev, [projectId]: "" }));
-  };
 
-  const addSubtask = (projectId, milestoneId, title) => {
-    if (!title) return;
-    setProjects((prev) =>
-      prev.map((project) =>
-        project.id === projectId
-          ? {
-              ...project,
-              milestones: project.milestones.map((milestone) =>
-                milestone.id === milestoneId
-                  ? {
-                      ...milestone,
-                      subtasks: [
-                        ...milestone.subtasks,
-                        {
-                          id: Date.now(),
-                          title,
-                          status: "ongoing",
-                          completedBy: null,
-                        },
-                      ],
-                    }
-                  : milestone
-              ),
-            }
-          : project
-      )
-    );
-    toast.success("Subtask added");
-    setSubtaskInput((prev) => ({ ...prev, [`${projectId}-${milestoneId}`]: "" }));
-  };
-
-  const toggleSubtaskStatus = (projectId, milestoneId, subtaskId) => {
-    setProjects((prev) =>
-      prev.map((project) =>
-        project.id === projectId
-          ? {
-              ...project,
-              milestones: project.milestones.map((milestone) =>
-                milestone.id === milestoneId
-                  ? {
-                      ...milestone,
-                      subtasks: milestone.subtasks.map((subtask) =>
-                        subtask.id === subtaskId
-                          ? {
-                              ...subtask,
-                              status: subtask.status === "completed" ? "ongoing" : "completed",
-                              completedBy: subtask.status === "completed" ? null : intern?.name,
-                            }
-                          : subtask
-                      ),
-                    }
-                  : milestone
-              ),
-            }
-          : project
-      )
-    );
-  };
-
-  const toggleMilestoneStatus = (projectId, milestoneId) => {
-    setProjects((prev) =>
-      prev.map((project) =>
-        project.id === projectId
-          ? {
-              ...project,
-              milestones: project.milestones.map((milestone) =>
-                milestone.id === milestoneId
-                  ? {
-                      ...milestone,
-                      status: milestone.status === "completed" ? "ongoing" : "completed",
-                    }
-                  : milestone
-              ),
-            }
-          : project
-      )
-    );
-  };
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f] text-white p-6">
-      <header className="mb-10 flex items-center justify-between bg-white p-4 rounded-lg">
-        <div className="flex items-center gap-4">
-          <img
-            src={getImageUrl(intern?.profilePicture)}
-            alt="Profile"
-            className="h-16 w-16 rounded-full border border-[#EA9753] object-cover"
-          />
+    <div className="min-h-screen bg-white text-black p-4 md:p-6">
+      {/* HEADER */}
+      <header className="sticky top-0 z-50 flex flex-col md:flex-row md:items-center md:justify-between bg-white p-4 md:p-6 rounded-2xl shadow border border-gray-200 mb-4">
+        <div className="flex items-center gap-4 md:gap-6 mb-4 md:mb-0">
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#144145] to-[#1D7F8C] blur-sm opacity-30 animate-pulse"></div>
+            <img
+              src={getImageUrl(intern?.profilePicture)}
+              alt="Profile"
+              className="relative h-12 w-12 md:h-16 md:w-16 rounded-full border-4 border-[#1D7F8C] shadow-md object-cover"
+            />
+          </div>
           <div>
-            <h1 className="text-3xl font-extrabold text-black">Welcome Back, {intern?.name}</h1>
-            <p className="text-gray-600 mt-1">Your personalized dashboard</p>
+            <h1 className="text-xl md:text-2xl font-extrabold text-gray-800">{intern?.name}</h1>
+            <p className="text-xs md:text-sm text-gray-500 mt-1">Welcome back! Here’s what’s happening today</p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-         <Link to="/company-chats" className="flex flex-col items-center text-[#EA9753] hover:text-[#d86e2c]">
-              <FiSend size={24} />
-
-</Link>
-
-          <img src={logo} alt="System Logo" className="h-14" />
+        <div className="flex gap-4">
+          <Link to="/company-chats" className="flex items-center gap-2 px-3 py-2 rounded-md text-white bg-[#144145] hover:bg-[#0e2d30] transition shadow">
+            <FiSend size={18} />
+            <span className="text-sm">Messages</span>
+          </Link>
+          <img src={logo} alt="System Logo" className="h-10 w-auto" />
         </div>
       </header>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-        {/* Intern Info */}
-        <div className="col-span-1 bg-[#1a1a1a] p-6 rounded-xl border border-[#144145] space-y-2">
-          <h2 className="text-xl font-bold mb-4">👤 Your Info</h2>
-          {editing ? (
-            <>
-              {["name", "email", "password", "university"].map((field) => (
-                <input
-                  key={field}
-                  type={field === "password" ? "password" : "text"}
-                  value={updatedInfo[field]}
-                  onChange={(e) => setUpdatedInfo({ ...updatedInfo, [field]: e.target.value })}
-                  placeholder={field}
-                  className="w-full bg-[#2a2a2a] text-white p-2 rounded mb-2"
-                />
-              ))}
-              <button onClick={handleUpdateProfile} className="bg-[#EA9753] text-white px-4 py-2 rounded mt-2">
-                Save Changes
-              </button>
-            </>
-          ) : (
-            <>
-              <p><span className="text-gray-400">Name:</span> {intern?.name}</p>
-              <p><span className="text-gray-400">Email:</span> {intern?.email}</p>
-              <p><span className="text-gray-400">CGPA:</span> {intern?.CGPA}</p>
-              <p><span className="text-gray-400">University:</span> {intern?.university}</p>
-              <p>
-                <span className="text-gray-400">Status:</span>{" "}
-                <span className={`font-semibold ${getStatusColor(intern?.status)}`}>
-                  {intern?.status?.charAt(0).toUpperCase() + intern?.status?.slice(1)}
-                </span>
-              </p>
-              <button onClick={() => setEditing(true)} className="text-sm text-[#EA9753] hover:underline mt-2">
-                Edit Info
-              </button>
-            </>
-          )}
-        </div>
 
-        {/* Projects, Milestones, Subtasks */}
-        <div className="col-span-2 bg-[#1a1a1a] p-6 rounded-xl border border-[#144145] space-y-6">
-          <h2 className="text-xl font-bold mb-4">🚀 Projects & Milestones</h2>
+      {/* TABS */}
+      <div className="flex justify-center gap-4 mb-4 border-b border-gray-300">
+        <button onClick={() => setActiveTab("projects")} className={`px-4 py-2 font-semibold ${activeTab === "projects" ? "border-b-4 border-[#144145] text-[#144145]" : "text-gray-500"}`}>
+          Projects
+        </button>
+        <button onClick={() => setActiveTab("profile")} className={`px-4 py-2 font-semibold ${activeTab === "profile" ? "border-b-4 border-[#EA9753] text-[#EA9753]" : "text-gray-500"}`}>
+          Profile
+        </button>
+      </div>
+{/* CONTENT */}
+<div className="flex flex-col md:flex-row gap-4 md:gap-6">
+  {activeTab === "projects" && (
+    <div className="flex-1 bg-white p-4 md:p-6 rounded-xl border border-gray-300 shadow">
+      <h2 className="text-lg font-bold mb-4">🚀 Your Projects</h2>
 
-          {projects.map((project) => (
-            <div key={project.id} className="mb-6 border-b border-[#333] pb-4">
-              <div className="flex justify-between mb-1">
-                <h3 className="text-lg font-semibold">{project.title}</h3>
-                <span className="text-sm text-gray-400">{calculateProjectProgress(project)}%</span>
-              </div>
-              <div className="w-full h-3 bg-gray-700 rounded-full overflow-hidden mb-3">
-                <div className="h-full bg-[#EA9753]" style={{ width: `${calculateProjectProgress(project)}%` }}></div>
-              </div>
+      {projects.length === 0 ? (
+        <p className="text-gray-500">You’re not part of any project yet.</p>
+      ) : (
+        <div className="space-y-4">
+          {projects.map((project) => {
+            const totalMilestones = project.milestones?.length || 0;
+            let totalSubtasks = 0;
+            let completedSubtasks = 0;
 
-              <input
-                type="text"
-                value={milestoneInput[project.id] || ""}
-                onChange={(e) => setMilestoneInput((prev) => ({ ...prev, [project.id]: e.target.value }))}
-                placeholder="New milestone"
-                className="bg-[#2a2a2a] p-2 w-full rounded mb-2"
-              />
-              <button onClick={() => addMilestone(project.id, milestoneInput[project.id])} className="text-sm text-[#EA9753] mb-4">
-                Add Milestone
-              </button>
+            project.milestones?.forEach((m) => {
+              totalSubtasks += m.tasks?.length || 0;
+              completedSubtasks += m.tasks?.filter((st) => st.completed).length || 0;
+            });
 
-              {project.milestones.map((milestone) => (
-                <div key={milestone.id} className="mb-4 pl-4">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-medium">
-                      📍 {milestone.title} – <span className="text-sm text-gray-400">{calculateMilestoneProgress(milestone)}%</span>
-                    </span>
+            const completedMilestones = project.milestones?.filter((m) => m.completed).length || 0;
+            const totalItems = totalMilestones + totalSubtasks;
+            const completedItems = completedMilestones + completedSubtasks;
+            const progress = totalItems === 0 ? 0 : (completedItems / totalItems) * 100;
+
+            return (
+              <div key={project._id} className="border border-gray-300 p-4 rounded-lg shadow-sm">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-md md:text-3xl font-bold text-[#144145]">{project.name}</h3>
+                  <div className="w-24 h-24">
+                    <CircularProgressbar
+                      value={progress}
+                      text={`${Math.round(progress)}%`}
+                      styles={buildStyles({
+                        textSize: "24px",
+                        textColor: "#144145",
+                        pathColor: "#EA9753",
+                        trailColor: "#e6e6e6",
+                      })}
+                    />
+                  </div>
+                </div>
+                <p className="text-gray-600 mb-1">{project.description}</p>
+
+                {/* Project Leader */}
+                {project.leader && (
+                  <div className="mt-2 text-sm text-gray-800">
+                    <p className="font-semibold">⭐Project Leader:</p>
+                    <p>Name: {project.leader.name}</p>
+                    <p>Email: {project.leader.email}</p>
+                  </div>
+                )}
+
+                {/* Project Members */}
+                {project.members?.length > 0 && (
+                  <div className="mt-2 text-sm text-gray-800">
+                    <p className="font-semibold">👥 Members:</p>
+                    <ul className="list-disc list-inside ml-2">
+                      {project.members.map((member) => (
+                        <li key={member._id}>
+                          {member.name} - {member.email}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Milestones */}
+                <div className="mt-4 space-y-2">
+                  <p className="text-sm font-semibold text-gray-700">Milestones:</p>
+                  {project.milestones?.length > 0 ? (
+                    project.milestones.map((milestone) => (
+                      <div key={milestone._id} className="bg-gray-50 p-2 rounded border text-sm">
+                        <div className="flex justify-between items-center">
+                          <div className="flex gap-1 items-center">
+                            {milestone.completed ? (
+                              <FiCheck className="text-green-600" />
+                            ) : (
+                              <div className="w-4 h-4 border border-gray-400 rounded-full" />
+                            )}
+                            <div className="font-medium">📌 {milestone.name}</div>
+                          </div>
+                          <div className="flex gap-1">
+                            <button
+                              
+                              className="text-blue-500 hover:text-blue-700"
+                            >
+                              <FiEdit />
+                            </button>
+                            <button
+                            
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <FiTrash2 />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Subtasks */}
+                        <div className="ml-4 mt-1 space-y-1">
+                          {milestone.tasks?.length > 0 ? (
+                            milestone.tasks.map((task) => (
+                              <div
+                                key={task._id}
+                                className={`flex items-center justify-between text-xs p-1 rounded ${
+                                  task.completed ? "bg-green-50 text-green-700" : "bg-white"
+                                }`}
+                              >
+                                <div
+                                  className="flex items-center gap-1 cursor-pointer"
+                                  
+                                >
+                                  {task.completed ? "🟢" : "⚪"} {task.name}
+                                </div>
+                                <div className="flex gap-1">
+                                  <button
+                                   
+                                    className="text-blue-500 hover:text-blue-700"
+                                  >
+                                    <FiEdit />
+                                  </button>
+                                  <button
+                                  
+                                    className="text-red-500 hover:text-red-700"
+                                  >
+                                    <FiTrash2 />
+                                  </button>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-xs text-gray-500">No subtasks yet.</p>
+                          )}
+
+                          {/* Add subtask input */}
+                          <div className="flex items-center gap-2 mt-1">
+                            <input
+                              type="text"
+                              placeholder="New subtask"
+                              value={subtaskInputs[milestone._id] || ""}
+                              onChange={(e) =>
+                                handleSubtaskInputChange(milestone._id, e.target.value)
+                              }
+                              className="flex-1 p-1 border rounded text-xs"
+                            />
+                            <button
+                              onClick={() => handleAddSubtask(milestone._id)}
+                              className="bg-[#EA9753] hover:bg-[#d2782c] text-white rounded p-1"
+                            >
+                              <FiPlus />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-gray-500">No milestones yet.</p>
+                  )}
+
+                  {/* Add milestone input */}
+                  <div className="flex items-center gap-2 mt-2">
+                    <input
+                      type="text"
+                      placeholder="New milestone"
+                      value={milestoneInputs[project._id] || ""}
+                      onChange={(e) =>
+                        handleMilestoneInputChange(project._id, e.target.value)
+                      }
+                      className="flex-1 p-1 border rounded text-xs"
+                    />
                     <button
-                      onClick={() => toggleMilestoneStatus(project.id, milestone.id)}
-                      className="text-xs text-gray-300 hover:text-white"
+                      onClick={() => handleAddMilestone(project._id)}
+                      className="bg-[#144145] hover:bg-[#0e2d30] text-white rounded p-1"
                     >
-                      Mark as {milestone.status === "completed" ? "Ongoing" : "Completed"}
+                      <FiPlus />
                     </button>
                   </div>
-
-                  {milestone.subtasks.map((subtask) => (
-                    <div key={subtask.id} className="pl-4 flex justify-between items-center text-sm text-gray-300">
-                      <div>
-                        👉 {subtask.title}{" "}
-                        {subtask.status === "completed" && (
-                          <span className="text-xs text-green-400 ml-2">by {subtask.completedBy}</span>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => toggleSubtaskStatus(project.id, milestone.id, subtask.id)}
-                        className="text-xs text-[#EA9753] hover:underline"
-                      >
-                        Mark {subtask.status === "completed" ? "Ongoing" : "Completed"}
-                      </button>
-                    </div>
-                  ))}
-
-                  <input
-                    type="text"
-                    value={subtaskInput[`${project.id}-${milestone.id}`] || ""}
-                    onChange={(e) =>
-                      setSubtaskInput((prev) => ({ ...prev, [`${project.id}-${milestone.id}`]: e.target.value }))
-                    }
-                    placeholder="New subtask"
-                    className="bg-[#2a2a2a] p-2 w-full mt-2 rounded"
-                  />
-                  <button
-                    onClick={() => addSubtask(project.id, milestone.id, subtaskInput[`${project.id}-${milestone.id}`])}
-                    className="text-xs text-[#EA9753] mt-1"
-                  >
-                    Add Subtask
-                  </button>
                 </div>
-              ))}
-            </div>
-          ))}
-        </div>
+              </div>
+            );
+          })}
+      
+
+
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
