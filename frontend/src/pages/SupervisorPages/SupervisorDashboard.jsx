@@ -7,7 +7,8 @@ import logo from "../../assets/logo.png";
 import placeholderImage from "../../assets/placeholder.png";
 
 export default function SupervisorDashboard() {
-  const { cohortId } = useParams();
+  // get both supervisorId and cohortId from URL params
+  const { supervisorId, cohortId } = useParams();
   const [interns, setInterns] = useState([]);
   const [filteredInterns, setFilteredInterns] = useState([]);
   const [supervisorName] = useState("Supervisor");
@@ -16,9 +17,9 @@ export default function SupervisorDashboard() {
   const [attendance, setAttendance] = useState({});
   const [newProject, setNewProject] = useState({
     name: "",
-    teamLead: "",
+    leader: "",
     description: "",
-    teamMembers: [],
+    members: [],
   });
   const [projects] = useState([]);
   const [showProjectForm, setShowProjectForm] = useState(false);
@@ -36,9 +37,7 @@ export default function SupervisorDashboard() {
           }
         );
         const data = await response.json();
-
         if (!response.ok) throw new Error(data?.message || "Failed to fetch interns");
-
         if (Array.isArray(data)) {
           setInterns(data);
           setFilteredInterns(data);
@@ -57,7 +56,6 @@ export default function SupervisorDashboard() {
         setLoading(false);
       }
     };
-
     if (cohortId) {
       fetchInterns();
     }
@@ -82,6 +80,47 @@ export default function SupervisorDashboard() {
   const filteredTeamLeadOptions = filteredInterns.filter((intern) =>
     intern.name?.toLowerCase().includes(teamLeadSearch.toLowerCase())
   );
+
+  const toggleTeamMember = (internId) => {
+    setNewProject((prev) => {
+      const members = prev.members.includes(internId)
+        ? prev.members.filter((id) => id !== internId)
+        : [...prev.members, internId];
+      return { ...prev, members: members };
+    });
+  };
+
+  const handleCreateProject = async () => {
+    if (!newProject.name || !newProject.leader || !newProject.description || newProject.members.length === 0) {
+      toast.error("Please fill in all fields and select at least one team member.");
+      return;
+    }
+    try {
+      const token = localStorage.getItem("supervisorToken");
+      const response = await fetch("http://localhost:5000/api/supervisor/new-project", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          supervisorId, // ADD supervisorId from URL
+          cohortId,
+          name: newProject.name,
+          description: newProject.description,
+          leader: newProject.leader,
+          members: newProject.members,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.message || "Failed to create project");
+      toast.success("Project created successfully!");
+      setNewProject({ name: "", leader: "", description: "", members: [] });
+      setShowProjectForm(false);
+    } catch (error) {
+      toast.error("Failed to create project.",error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#1a1a1a] text-white">
@@ -225,58 +264,49 @@ export default function SupervisorDashboard() {
                   <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search team lead..."
+                    placeholder="Search for Team Lead..."
                     value={teamLeadSearch}
                     onChange={(e) => setTeamLeadSearch(e.target.value)}
-                    className="w-full p-2 pl-10 rounded-2xl bg-[#1f1f1f] text-white border border-[#74C2E1]"
+                    className="w-full p-2 pl-10 rounded bg-[#1f1f1f] text-white border border-gray-600"
                   />
                 </div>
 
-                <select
-                  value={newProject.teamLead}
-                  onChange={(e) => setNewProject((prev) => ({ ...prev, teamLead: e.target.value }))}
-                  className="w-full p-2 rounded-2xl bg-[#1f1f1f] text-white border border-[#74C2E1]"
-                  size={4}
-                >
-                  <option value="">Select Team Lead</option>
+                <div className="max-h-40 overflow-y-auto border border-gray-600 rounded">
                   {filteredTeamLeadOptions.map((intern) => (
-                    <option
+                    <div
                       key={intern._id}
-                      value={intern._id}
-                      className={newProject.teamLead === intern._id ? "bg-[#FFA645] text-black font-semibold" : ""}
+                      onClick={() => setNewProject((prev) => ({ ...prev, leader: intern._id }))}
+                      className={`p-2 cursor-pointer ${
+                        newProject.leader === intern._id ? "bg-[#FFA645] text-black" : "hover:bg-gray-700"
+                      }`}
                     >
                       {intern.name}
-                    </option>
-                  ))}
-                </select>
-
-                <label className="block text-sm text-[#FFA645] mb-1">Team Members</label>
-                <div className="space-y-2 max-h-48 overflow-y-auto bg-[#1f1f1f] p-2 rounded-2xl border border-[#74C2E1]">
-                  {filteredInterns.map((intern) => (
-                    <label key={intern._id} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        value={intern._id}
-                        checked={newProject.teamMembers.includes(intern._id)}
-                        onChange={(e) => {
-                          const id = e.target.value;
-                          setNewProject((prev) => ({
-                            ...prev,
-                            teamMembers: prev.teamMembers.includes(id)
-                              ? prev.teamMembers.filter((mid) => mid !== id)
-                              : [...prev.teamMembers, id],
-                          }));
-                        }}
-                        className="form-checkbox text-[#FFA645]"
-                      />
-                      <span className="text-gray-300">{intern.name}</span>
-                    </label>
+                    </div>
                   ))}
                 </div>
 
+                <div>
+                  <p className="text-sm font-semibold text-gray-400 mb-1">Select Team Members:</p>
+                  <div className="max-h-40 overflow-y-auto border border-gray-600 rounded">
+                    {filteredInterns.map((intern) => (
+                      <div
+                        key={intern._id}
+                        onClick={() => toggleTeamMember(intern._id)}
+                        className={`p-2 cursor-pointer ${
+                          newProject.members.includes(intern._id)
+                            ? "bg-[#FFA645] text-black"
+                            : "hover:bg-gray-700"
+                        }`}
+                      >
+                        {intern.name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <button
-                  onClick={() => toast.success("UI only — Project creation triggered")}
-                  className="mt-3 px-4 py-2 bg-[#FFA645] hover:bg-[#ff9022] rounded-2xl text-black font-semibold"
+                  onClick={handleCreateProject}
+                  className="w-full py-2 bg-[#FFA645] text-black font-semibold rounded-2xl mt-2 hover:bg-[#ffb74d] transition"
                 >
                   Create Project
                 </button>

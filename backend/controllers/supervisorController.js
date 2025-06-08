@@ -46,30 +46,45 @@ exports.loginSupervisor = async (req, res) => {
 
 exports.createProject = async (req, res) => {
   try {
-    const internId = req.intern._id; 
-    const { name, supervisor } = req.body;
+    const supervisorId = req.supervisor._id; // Assumes auth middleware attaches this
+    const { name, description, leader, members } = req.body;
 
-    if (!name || !supervisor) {
-      return res.status(400).json({ message: "Project name and supervisor ID are required." });
+    if (!name || !description || !leader || !members || !Array.isArray(members)) {
+      return res.status(400).json({ message: "Missing or invalid fields. Ensure name, description, leader, and members are provided." });
+    }
+
+    // Check that leader is among the members
+    if (!members.includes(leader)) {
+      return res.status(400).json({ message: "Leader must be one of the members." });
+    }
+
+    // Optional: Validate if each intern exists
+    const internsExist = await Intern.find({ _id: { $in: members } });
+    if (internsExist.length !== members.length) {
+      return res.status(404).json({ message: "One or more intern IDs are invalid." });
     }
 
     const newProject = new Project({
       name,
-      supervisor,
-      leader: internId,
-      members: [internId],
-      status: "ongoing",
+      description,
+      leader,
+      members,
+      supervisor: supervisorId,
+      status: 'open', // default
+      outcome: 'unknown' // default
     });
 
     await newProject.save();
 
-    return res.status(201).json(newProject);
+    return res.status(201).json({
+      message: "Project created successfully.",
+      project: newProject
+    });
   } catch (err) {
-    console.error(err);
+    console.error("Project creation error:", err);
     res.status(500).json({ message: "Failed to create project." });
   }
 };
-
 
 
 
