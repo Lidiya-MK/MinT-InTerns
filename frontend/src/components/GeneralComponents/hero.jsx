@@ -47,8 +47,9 @@ const Hero = () => {
 
         <div className="z-10 max-w-3xl">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-[#144145] leading-tight mb-4">
-            Ignite Your Career with{" "}
-            <span className="text-[#D25B24]">MinT Internships</span>
+            <span className="text-[#D25B24]">MinT Internships <br/></span>{" "}
+            Ignite Your Career with
+            
           </h1>
           <p className="text-lg md:text-xl text-gray-700 mb-4">
             A gateway to Ethiopia’s official software internship program at the Ministry of Innovation and Technology.

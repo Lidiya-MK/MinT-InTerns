@@ -23,7 +23,7 @@ exports.getOngoingCohorts = async (req, res) => {
     const now = new Date();
     const ongoingCohorts = await Cohort.find({
       applicationStart: { $lte: now },
-      applicationEnd: { $gte: now },
+      cohortEnd: { $gte: now },
     }).sort({ applicationStart: 1 });
 
     if (ongoingCohorts.length === 0) {
@@ -55,3 +55,5 @@ exports.getPastCohorts = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch past cohorts' });
   }
 };
+
+

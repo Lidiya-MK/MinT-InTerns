@@ -1,6 +1,10 @@
 const Intern = require('../models/Intern');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const Project = require("../models/Project");
+const Supervisor = require('../models/Supervisor');
+const mongoose = require('mongoose');
+
 
 exports.applyIntern = async (req, res) => {
   try {
@@ -73,7 +77,7 @@ exports.getInternById = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const intern = await Intern.findById(id).select('-password'); // Exclude password
+    const intern = await Intern.findById(id).select('-password'); 
 
     if (!intern) {
       return res.status(404).json({ message: 'Intern not found' });
@@ -85,3 +89,7 @@ exports.getInternById = async (req, res) => {
     res.status(500).json({ error: 'Something went wrong' });
   }
 };
+
+
+
+

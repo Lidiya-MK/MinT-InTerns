@@ -4,7 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const { protect } = require('../middleware/internAuth');
 
-const { applyIntern, loginIntern, getInternById } = require('../controllers/internController');
+const { applyIntern, loginIntern, getInternById, createProject,getAllSupervisors } = require('../controllers/internController');
 
 // File storage configuration
 const storage = multer.diskStorage({
@@ -32,5 +32,6 @@ router.post(
 // Intern Login Route
 router.post('/login', loginIntern);
 router.get('/:id', protect, getInternById);
+
 
 module.exports = router;

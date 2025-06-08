@@ -25,6 +25,9 @@ const adminRoutes = require('./routes/adminRoutes');
 app.use('/api/admin', adminRoutes);
 const cohortRoutes = require('./routes/cohortRoutes');
 app.use('/api/cohort', cohortRoutes);
+const supervisorRoutes = require('./routes/supervisorRoutes');
+app.use('/api/supervisor', supervisorRoutes);
+
 
 
 

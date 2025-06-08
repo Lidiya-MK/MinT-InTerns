@@ -1,132 +1,282 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
+import defaultAvatar from "../../assets/default-avatar.png";
 import logo from "../../assets/logo.png";
-
-const mockInterns = [
-  { id: 1, name: "Amanuel T", email: "aman@mint.com", attendance: false },
-  { id: 2, name: "Sara M", email: "sara@mint.com", attendance: true },
-];
-
-const mockProjects = [
-  { id: 1, title: "Web Redesign", interns: [1], progress: 50 },
-  { id: 2, title: "Mobile App", interns: [2], progress: 30 },
-];
+import placeholderImage from "../../assets/placeholder.png";
 
 export default function SupervisorDashboard() {
+  const { cohortId } = useParams();
   const [interns, setInterns] = useState([]);
-  const [projects, setProjects] = useState([]);
-  const [selectedProject, setSelectedProject] = useState(null);
-  const [selectedInternId, setSelectedInternId] = useState("");
+  const [filteredInterns, setFilteredInterns] = useState([]);
+  const [supervisorName] = useState("Supervisor");
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [attendance, setAttendance] = useState({});
+  const [newProject, setNewProject] = useState({
+    name: "",
+    teamLead: "",
+    description: "",
+    teamMembers: [],
+  });
+  const [projects] = useState([]);
+  const [showProjectForm, setShowProjectForm] = useState(false);
+  const [teamLeadSearch, setTeamLeadSearch] = useState("");
 
   useEffect(() => {
-    setInterns(mockInterns);
-    setProjects(mockProjects);
-  }, []);
+    const fetchInterns = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem("supervisorToken");
+        const response = await fetch(
+          `http://localhost:5000/api/supervisor/cohort/${cohortId}/interns`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        const data = await response.json();
 
-  const toggleAttendance = (id) => {
-    setInterns((prev) =>
-      prev.map((i) =>
-        i.id === id ? { ...i, attendance: !i.attendance } : i
-      )
+        if (!response.ok) throw new Error(data?.message || "Failed to fetch interns");
+
+        if (Array.isArray(data)) {
+          setInterns(data);
+          setFilteredInterns(data);
+          const initialAttendance = {};
+          data.forEach((intern) => {
+            initialAttendance[intern._id] = true;
+          });
+          setAttendance(initialAttendance);
+        } else {
+          setInterns([]);
+        }
+      } catch (error) {
+        toast.error("Error fetching interns.", error);
+        setInterns([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (cohortId) {
+      fetchInterns();
+    }
+  }, [cohortId]);
+
+  useEffect(() => {
+    const filtered = interns.filter(
+      (intern) =>
+        intern.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        intern.email?.toLowerCase().includes(searchQuery.toLowerCase())
     );
-    toast.success("Attendance updated (mock)");
+    setFilteredInterns(filtered);
+  }, [searchQuery, interns]);
+
+  const toggleAttendance = (internId) => {
+    setAttendance((prev) => ({
+      ...prev,
+      [internId]: !prev[internId],
+    }));
   };
 
-  const handleAssignIntern = () => {
-    if (!selectedInternId || !selectedProject) return toast.error("Select intern and project");
-    setProjects((prev) =>
-      prev.map((project) =>
-        project.id === selectedProject
-          ? {
-              ...project,
-              interns: [...new Set([...project.interns, Number(selectedInternId)])],
-            }
-          : project
-      )
-    );
-    toast.success("Intern assigned to project (mock)");
-  };
+  const filteredTeamLeadOptions = filteredInterns.filter((intern) =>
+    intern.name?.toLowerCase().includes(teamLeadSearch.toLowerCase())
+  );
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f] text-white p-6">
-      <header className="flex items-center justify-between mb-10">
-        <h1 className="text-3xl font-bold">Supervisor Dashboard</h1>
-        <img src={logo} alt="Logo" className="h-12" />
+    <div className="min-h-screen bg-[#1a1a1a] text-white">
+      {/* Header */}
+      <header className="w-full bg-white text-black  py-4 flex items-center  rounded-b-3xl shadow-md">
+        <img src={logo} alt="MiNT InTerns" className="h-10 w-auto" />
+        <h1 className="text-3xl font-semibold text-black -mx-8">Welcome, {supervisorName}</h1>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Interns */}
-        <div className="bg-[#1a1a1a] p-5 rounded-xl border border-[#144145]">
-          <h2 className="text-xl font-bold mb-4">👥 Interns</h2>
-          {interns.map((intern) => (
-            <div key={intern.id} className="mb-4 p-3 bg-[#2a2a2a] rounded-lg">
-              <p><strong>{intern.name}</strong></p>
-              <p className="text-sm text-gray-400">{intern.email}</p>
-              <button
-                onClick={() => toggleAttendance(intern.id)}
-                className={`mt-2 text-sm px-3 py-1 rounded ${
-                  intern.attendance ? "bg-green-600" : "bg-red-600"
-                }`}
-              >
-                {intern.attendance ? "Present" : "Absent"}
-              </button>
-            </div>
-          ))}
-        </div>
+      {/* Main content */}
+      <div className="p-6 flex flex-col lg:flex-row gap-8 items-start">
+        {/* Left Panel */}
+        <div className="lg:w-1/2">
+          <input
+            type="text"
+            placeholder="Search interns by name or email..."
+            className="w-full p-2 rounded bg-[#1f1f1f] text-white border border-gray-600 mb-4"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
 
-        {/* Assign Intern to Project */}
-        <div className="bg-[#1a1a1a] p-5 rounded-xl border border-[#144145]">
-          <h2 className="text-xl font-bold mb-4">➕ Assign Intern to Project</h2>
-          <select
-            onChange={(e) => setSelectedInternId(e.target.value)}
-            className="w-full mb-3 p-2 bg-[#2a2a2a] text-white rounded"
-          >
-            <option value="">Select Intern</option>
-            {interns.map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.name}
-              </option>
-            ))}
-          </select>
-          <select
-            onChange={(e) => setSelectedProject(Number(e.target.value))}
-            className="w-full mb-3 p-2 bg-[#2a2a2a] text-white rounded"
-          >
-            <option value="">Select Project</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.title}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={handleAssignIntern}
-            className="bg-[#EA9753] text-white px-4 py-2 rounded"
-          >
-            Assign
-          </button>
-        </div>
-
-        {/* Project Progress */}
-        <div className="bg-[#1a1a1a] p-5 rounded-xl border border-[#144145]">
-          <h2 className="text-xl font-bold mb-4">📈 Project Progress</h2>
-          {projects.map((project) => (
-            <div key={project.id} className="mb-5">
-              <div className="flex justify-between text-sm mb-1">
-                <span>{project.title}</span>
-                <span>{project.progress}%</span>
-              </div>
-              <div className="w-full h-3 bg-gray-700 rounded-full">
+          {loading ? (
+            <p className="text-gray-400">Loading interns...</p>
+          ) : filteredInterns.length === 0 ? (
+            <p className="text-gray-400">No interns match your search.</p>
+          ) : (
+            <div className="max-h-[600px] overflow-y-auto space-y-4 pr-2">
+              {filteredInterns.map((intern) => (
                 <div
-                  className="h-full bg-[#EA9753] rounded-full transition-all duration-300"
-                  style={{ width: `${project.progress}%` }}
-                ></div>
-              </div>
-              <p className="text-xs text-gray-400 mt-1">
-                Interns: {project.interns.map((id) => interns.find(i => i.id === id)?.name).join(", ")}
-              </p>
+                  key={intern._id}
+                  className="bg-[#2a2a2a] rounded-xl shadow p-4 flex items-center justify-between"
+                >
+                  <div className="flex items-center space-x-4">
+                    <img
+                      src={
+                        intern.profilePicture
+                          ? `http://localhost:5000/${intern.profilePicture.replace(/\\/g, "/")}`
+                          : defaultAvatar
+                      }
+                      alt={intern.name || "Intern"}
+                      className="w-14 h-14 rounded-full object-cover border border-gray-500"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = defaultAvatar;
+                      }}
+                    />
+                    <div>
+                      <p className="font-semibold text-white">{intern.name || "Unnamed Intern"}</p>
+                      <p className="text-sm text-gray-400">Email: {intern.email || "No email"}</p>
+                      <p className="text-sm text-gray-400">CGPA: {intern.CGPA ?? "N/A"}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-center space-y-1">
+                    <span
+                      className={`text-xs font-semibold ${
+                        attendance[intern._id] ? "text-green-400" : "text-red-400"
+                      }`}
+                    >
+                      {attendance[intern._id] ? "Present" : "Absent"}
+                    </span>
+                    <button
+                      onClick={() => toggleAttendance(intern._id)}
+                      className={`w-10 h-5 rounded-full transition duration-200 ${
+                        attendance[intern._id] ? "bg-green-500" : "bg-red-500"
+                      }`}
+                    >
+                      <div
+                        className={`w-4 h-4 bg-white rounded-full transform transition-transform ${
+                          attendance[intern._id] ? "translate-x-5" : "translate-x-0"
+                        }`}
+                      ></div>
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
+        </div>
+
+        {/* Right Panel */}
+        <div className="lg:w-1/2 flex flex-col justify-start bg-[#2a2a2a] p-6 rounded-lg shadow-lg border border-[#FFA645] mt-4 lg:mt-2">
+          {!showProjectForm ? (
+            <>
+              <button
+                onClick={() => setShowProjectForm(true)}
+                className="px-5 py-3 border border-[#FFA645] text-[#FFA645] hover:bg-[#FFA645] hover:text-black font-semibold rounded-2xl shadow transition"
+              >
+                + New Project
+              </button>
+              <div className="mt-6 flex flex-col items-center justify-center">
+                {projects.length === 0 ? (
+                  <div className="text-center">
+                    <img src={placeholderImage} alt="No Projects" className="mx-auto w-40 opacity-60" />
+                    <p className="text-gray-400 mt-2">No projects to show</p>
+                  </div>
+                ) : (
+                  <ul className="space-y-2">
+                    {projects.map((project, index) => (
+                      <li key={index} className="bg-[#1f1f1f] p-3 rounded border border-gray-600">
+                        <h3 className="text-lg font-semibold text-[#FFA645]">{project.name}</h3>
+                        <p className="text-sm text-gray-400">{project.description}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-semibold text-[#FFA645]">Create a New Project</h2>
+                <button
+                  onClick={() => setShowProjectForm(false)}
+                  className="text-gray-400 hover:text-red-400 transition text-xl"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Project Name"
+                  value={newProject.name}
+                  onChange={(e) => setNewProject((prev) => ({ ...prev, name: e.target.value }))}
+                  className="w-full p-2 rounded-2xl bg-[#1f1f1f] text-white border border-[#74C2E1]"
+                />
+
+                <textarea
+                  placeholder="Project Description"
+                  value={newProject.description}
+                  onChange={(e) => setNewProject((prev) => ({ ...prev, description: e.target.value }))}
+                  className="w-full p-2 rounded-2xl bg-[#1f1f1f] text-white border border-[#74C2E1]"
+                />
+
+                <input
+                  type="text"
+                  placeholder="Search team lead..."
+                  value={teamLeadSearch}
+                  onChange={(e) => setTeamLeadSearch(e.target.value)}
+                  className="w-full p-2 rounded-2xl bg-[#1f1f1f] text-white border border-[#74C2E1]"
+                />
+                <select
+                  value={newProject.teamLead}
+                  onChange={(e) => setNewProject((prev) => ({ ...prev, teamLead: e.target.value }))}
+                  className="w-full p-2 rounded-2xl bg-[#1f1f1f] text-white border border-[#74C2E1]"
+                  size={4}
+                >
+                  <option value="">Select Team Lead</option>
+                  {filteredTeamLeadOptions.map((intern) => (
+                    <option
+                      key={intern._id}
+                      value={intern._id}
+                      className={newProject.teamLead === intern._id ? "bg-[#FFA645] text-black font-semibold" : ""}
+                    >
+                      {intern.name}
+                    </option>
+                  ))}
+                </select>
+
+                <label className="block text-sm text-[#FFA645] mb-1">Team Members</label>
+                <div className="space-y-2 max-h-48 overflow-y-auto bg-[#1f1f1f] p-2 rounded-2xl border border-[#74C2E1]">
+                  {filteredInterns.map((intern) => (
+                    <label key={intern._id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        value={intern._id}
+                        checked={newProject.teamMembers.includes(intern._id)}
+                        onChange={(e) => {
+                          const id = e.target.value;
+                          setNewProject((prev) => ({
+                            ...prev,
+                            teamMembers: prev.teamMembers.includes(id)
+                              ? prev.teamMembers.filter((mid) => mid !== id)
+                              : [...prev.teamMembers, id],
+                          }));
+                        }}
+                        className="form-checkbox text-[#FFA645]"
+                      />
+                      <span className="text-gray-300">{intern.name}</span>
+                    </label>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => toast.success("UI only — Project creation triggered")}
+                  className="mt-3 px-4 py-2 bg-[#FFA645] hover:bg-[#ff9022] rounded-2xl text-black font-semibold"
+                >
+                  Create Project
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
