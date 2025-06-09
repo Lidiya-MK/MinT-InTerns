@@ -8,6 +8,7 @@ const taskSchema = new mongoose.Schema({
 
 const milestoneSchema = new mongoose.Schema({
   name: { type: String, required: true },
+  status: { type: String, enum: ['ongoing', 'completed'], default: 'ongoing' },
   project: { type: mongoose.Schema.Types.ObjectId, ref: 'Project', required: true },
   tasks: [taskSchema]
 }, { timestamps: true });

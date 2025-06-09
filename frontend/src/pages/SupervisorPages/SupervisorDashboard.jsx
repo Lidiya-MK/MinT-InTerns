@@ -131,8 +131,8 @@ export default function SupervisorDashboard() {
             onClick={() => setActiveTab("interns")}
             className={`px-4 py-2 rounded-2xl font-semibold transition ${
               activeTab === "interns"
-                ? "bg-[#FFA645] text-black"
-                : "border border-[#FFA645] text-[#FFA645] hover:bg-[#FFA645] hover:text-black"
+                ? "bg-[#144145] text-white"
+                : "border border-[#144145] text-[#144145] hover:bg-[#144145] hover:text-white"
             }`}
           >
             Interns
@@ -141,8 +141,8 @@ export default function SupervisorDashboard() {
             onClick={() => setActiveTab("projects")}
             className={`px-4 py-2 rounded-2xl font-semibold transition ${
               activeTab === "projects"
-                ? "bg-[#FFA645] text-black"
-                : "border border-[#FFA645] text-[#FFA645] hover:bg-[#FFA645] hover:text-black"
+                ? "bg-[#144145] text-white"
+                : "border border-[#144145] text-[#144145] hover:bg-[#144145] hover:text-white"
             }`}
           >
             Projects

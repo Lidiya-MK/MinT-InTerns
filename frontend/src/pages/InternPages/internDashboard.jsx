@@ -160,7 +160,6 @@ const handleToggleSubtaskStatus = async (milestoneId, subtaskIndex, completedBy)
         </button>
       </div>
 {/* CONTENT */}
-
 <div className="flex flex-col md:flex-row gap-4 md:gap-6">
   {activeTab === "projects" && (
     <div className="flex-1 bg-white p-4 md:p-6 rounded-xl border border-gray-300 shadow">
@@ -171,25 +170,30 @@ const handleToggleSubtaskStatus = async (milestoneId, subtaskIndex, completedBy)
       ) : (
         <div className="space-y-4">
           {projects.map((project) => {
-            const totalMilestones = project.milestones?.length || 0;
+            // Calculate progress based ONLY on subtasks
             let totalSubtasks = 0;
             let completedSubtasks = 0;
 
             project.milestones?.forEach((m) => {
               totalSubtasks += m.tasks?.length || 0;
-              completedSubtasks += m.tasks?.filter((st) => st.status === "completed").length || 0;
+              completedSubtasks +=
+                m.tasks?.filter((st) => st.status === "completed").length || 0;
             });
 
-            const completedMilestones =
-              project.milestones?.filter((m) => m.completed).length || 0;
-            const totalItems = totalMilestones + totalSubtasks;
-            const completedItems = completedMilestones + completedSubtasks;
-            const progress = totalItems === 0 ? 0 : (completedItems / totalItems) * 100;
+            const progress =
+              totalSubtasks === 0
+                ? 0
+                : (completedSubtasks / totalSubtasks) * 100;
 
             return (
-              <div key={project._id} className="border border-gray-300 p-4 rounded-lg shadow-sm">
+              <div
+                key={project._id}
+                className="border border-gray-300 p-4 rounded-lg shadow-sm"
+              >
                 <div className="flex justify-between items-center mb-2">
-                  <h3 className="text-md md:text-3xl font-bold text-[#144145]">{project.name}</h3>
+                  <h3 className="text-md md:text-3xl font-bold text-[#144145]">
+                    {project.name}
+                  </h3>
                   <div className="w-24 h-24">
                     <CircularProgressbar
                       value={progress}
@@ -208,7 +212,7 @@ const handleToggleSubtaskStatus = async (milestoneId, subtaskIndex, completedBy)
                 {/* Project Leader */}
                 {project.leader && (
                   <div className="mt-2 text-sm text-gray-800">
-                    <p className="font-semibold">⭐Project Leader:</p>
+                    <p className="font-semibold">⭐ Project Leader:</p>
                     <p>Name: {project.leader.name}</p>
                     <p>Email: {project.leader.email}</p>
                   </div>
@@ -235,26 +239,37 @@ const handleToggleSubtaskStatus = async (milestoneId, subtaskIndex, completedBy)
                     project.milestones.map((milestone) => (
                       <div
                         key={milestone._id}
-                        className="bg-gray-50 p-2 rounded border text-sm"
+                        className={`p-2 rounded border text-sm ${
+                          milestone.status === "completed"
+                            ? "bg-green-100 border-green-300"
+                            : "bg-yellow-50 border-yellow-300"
+                        }`}
                       >
                         <div className="flex justify-between items-center">
                           <div className="flex gap-1 items-center">
-                            {milestone.completed ? (
+                            {milestone.status === "completed" ? (
                               <FiCheck className="text-green-600" />
                             ) : (
-                              <div className="w-4 h-4 border border-gray-400 rounded-full" />
+                              <div className="w-4 h-4 border border-gray-400 rounded-full bg-yellow-400" />
                             )}
-                            <div className="font-medium">📌 {milestone.name}</div>
+                            <div className="font-medium flex gap-2 items-center">
+                              📌 {milestone.name}
+                              <span
+                                className={`text-xs px-2 py-0.5 rounded-full ${
+                                  milestone.status === "completed"
+                                    ? "bg-green-500 text-white"
+                                    : "bg-yellow-400 text-white"
+                                }`}
+                              >
+                                {milestone.status}
+                              </span>
+                            </div>
                           </div>
                           <div className="flex gap-1">
-                            <button
-                              className="text-[#144145] hover:text-[#144145]"
-                            >
+                            <button className="text-[#144145] hover:text-[#144145]">
                               <FiEdit />
                             </button>
-                            <button
-                              className="text-red-500 hover:text-red-700"
-                            >
+                            <button className="text-red-500 hover:text-red-700">
                               <FiTrash2 />
                             </button>
                           </div>
@@ -289,14 +304,18 @@ const handleToggleSubtaskStatus = async (milestoneId, subtaskIndex, completedBy)
                                     </span>
                                   )}
                                 </div>
-                                <div className="flex gap-3">
-                                  <button className="text-[#144145] hover:text-[#144145]">
-                                    <FiEdit />
-                                  </button>
-                                  <button className="text-red-500 hover:text-red-700">
-                                    <FiTrash2 />
-                                  </button>
-                                </div>
+
+                                {/* Hide Edit and Delete if completed */}
+                                {task.status !== "completed" && (
+                                  <div className="flex gap-3">
+                                    <button className="text-[#144145] hover:text-[#144145]">
+                                      <FiEdit />
+                                    </button>
+                                    <button className="text-red-500 hover:text-red-700">
+                                      <FiTrash2 />
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             ))
                           ) : (
@@ -338,10 +357,7 @@ const handleToggleSubtaskStatus = async (milestoneId, subtaskIndex, completedBy)
                       placeholder="New milestone"
                       value={milestoneInputs[project._id] || ""}
                       onChange={(e) =>
-                        handleMilestoneInputChange(
-                          project._id,
-                          e.target.value
-                        )
+                        handleMilestoneInputChange(project._id, e.target.value)
                       }
                       className="flex-1 p-1 border rounded text-xs"
                     />
@@ -356,6 +372,8 @@ const handleToggleSubtaskStatus = async (milestoneId, subtaskIndex, completedBy)
               </div>
             );
           })}
+      
+        
               </div>
             )}
           </div>

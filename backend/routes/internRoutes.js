@@ -16,8 +16,7 @@ const {
   editSubTask,
   deleteSubTask,
   toggleSubTaskStatus,
-  setMilestoneOngoing,
-  setMilestoneCompleted
+ 
   
 } = require('../controllers/internController');
 
@@ -71,8 +70,7 @@ router.patch(
   toggleSubTaskStatus
 );
 
-router.patch('/:projectId/set-ongoing', protect,setMilestoneOngoing);
-router.patch('/:projectId/set-completed', protect, setMilestoneCompleted);
+
 
 
 module.exports = router;

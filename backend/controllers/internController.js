@@ -295,47 +295,40 @@ exports.toggleSubTaskStatus = async (req, res) => {
     res.status(500).json({ error: "Something went wrong" });
   }
 };
-
-
-exports.setMilestoneOngoing = async (req, res) => {
+exports.toggleMilestoneStatus = async (req, res) => {
   try {
     const milestoneId = req.params.milestoneId;
-    const milestone = await Milestone.findByIdAndUpdate(
-      milestoneId,
-      { status: 'ongoing' },
-      { new: true }
-    );
+    const milestone = await Milestone.findById(milestoneId).populate('tasks');
 
     if (!milestone) {
       return res.status(404).json({ message: 'Milestone not found' });
     }
 
-    res.status(200).json({ message: 'Milestone status set to ongoing', milestone });
+    // Check if there are any tasks
+    const hasTasks = milestone.tasks && milestone.tasks.length > 0;
+
+    // Check if all tasks are completed
+    const allTasksCompleted = hasTasks && milestone.tasks.every(task => task.status === 'completed');
+
+    let newStatus = 'ongoing';
+
+    if (hasTasks && allTasksCompleted) {
+      newStatus = 'completed';
+    }
+
+    milestone.status = newStatus;
+    await milestone.save();
+
+    res.status(200).json({
+      message: `Milestone status set to ${newStatus}`,
+      milestone
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-exports.setMilestoneCompleted = async (req, res) => {
-  try {
-    const milestoneId = req.params.milestoneId;
-    const milestone = await Milestone.findByIdAndUpdate(
-      milestoneId,
-      { status: 'completed' },
-      { new: true }
-    );
-
-    if (!milestone) {
-      return res.status(404).json({ message: 'Milestone not found' });
-    }
-
-    res.status(200).json({ message: 'Milestone status set to completed', milestone });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
 
 
 
