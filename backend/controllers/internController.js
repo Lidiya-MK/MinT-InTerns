@@ -100,17 +100,24 @@ exports.getProjectsByInternId = async (req, res) => {
     }
 
     // Find all projects where the intern is a leader or a team member
-    const projects = await Project.find({
-      $or: [
-        { leader: internId },
-        { members: internId }
-      ]
-    })
-    .populate('leader', 'name email') 
-    .populate('members', 'name email') 
-    .populate('milestones'); 
+   const projects = await Project.find({
+  $or: [
+    { leader: internId },
+    { members: internId }
+  ]
+})
+.populate('leader', 'name email')
+.populate('members', 'name email')
+.populate({
+  path: 'milestones',
+  populate: {
+    path: 'tasks.completedBy',
+    select: 'name email'
+  }
+});
 
-    res.status(200).json(projects);
+res.status(200).json(projects);
+
   } catch (error) {
     console.error('Error fetching projects for intern:', error);
     res.status(500).json({ error: 'Something went wrong' });
@@ -171,15 +178,21 @@ exports.editMilestone = async (req, res) => {
   const { milestoneId, name } = req.body;
 
   try {
-    const milestone = await Milestone.findById(milestoneId).populate('project');
-    if (!milestone || milestone.project.leader.toString() !== internId) {
+    const milestone = await Milestone.findById(milestoneId).populate('project', 'leader');
+    if (!milestone) {
+      return res.status(404).json({ message: 'Milestone not found.' });
+    }
+
+    if (!milestone.project || milestone.project.leader.toString() !== internId) {
       return res.status(403).json({ message: 'Only the project leader can edit milestones.' });
     }
 
-    milestone.name = name || milestone.name;
-    await milestone.save();
+    if (name) {
+      milestone.name = name;
+      await milestone.save();
+    }
 
-    res.json(milestone);
+    res.json({ message: 'Milestone updated successfully', milestone });
   } catch (error) {
     console.error('Error editing milestone:', error);
     res.status(500).json({ error: 'Something went wrong' });
@@ -191,18 +204,24 @@ exports.deleteMilestone = async (req, res) => {
   const { milestoneId } = req.body;
 
   try {
-    const milestone = await Milestone.findById(milestoneId).populate('project');
-    if (!milestone || milestone.project.leader.toString() !== internId) {
+    const milestone = await Milestone.findById(milestoneId).populate('project', 'leader milestones');
+    if (!milestone) {
+      return res.status(404).json({ message: 'Milestone not found.' });
+    }
+
+    if (!milestone.project || milestone.project.leader.toString() !== internId) {
       return res.status(403).json({ message: 'Only the project leader can delete milestones.' });
     }
 
+    
     await Project.findByIdAndUpdate(milestone.project._id, {
       $pull: { milestones: milestone._id }
     });
 
+   
     await Milestone.findByIdAndDelete(milestoneId);
 
-    res.json({ message: 'Milestone deleted' });
+    res.json({ message: 'Milestone deleted successfully' });
   } catch (error) {
     console.error('Error deleting milestone:', error);
     res.status(500).json({ error: 'Something went wrong' });
@@ -251,45 +270,31 @@ exports.deleteSubTask = async (req, res) => {
     res.status(500).json({ error: 'Something went wrong' });
   }
 };
-
-exports.markSubTaskCompleted = async (req, res) => {
+exports.toggleSubTaskStatus = async (req, res) => {
   const { internId } = req.params;
   const { milestoneId, taskIndex } = req.body;
 
   try {
     const milestone = await Milestone.findById(milestoneId);
-    milestone.tasks[taskIndex].status = 'completed';
-    milestone.tasks[taskIndex].completedBy = internId;
+    const subtask = milestone.tasks[taskIndex];
+
+    if (subtask.status === "completed") {
+      subtask.status = "ongoing";
+      subtask.completedBy = null;
+    } else {
+      subtask.status = "completed";
+      subtask.completedBy = internId;
+    }
 
     milestone.status = calculateMilestoneStatus(milestone.tasks);
     await milestone.save();
 
     res.json(milestone);
   } catch (error) {
-    console.error('Error marking subtask completed:', error);
-    res.status(500).json({ error: 'Something went wrong' });
+    console.error("Error toggling subtask:", error);
+    res.status(500).json({ error: "Something went wrong" });
   }
 };
-
-exports.markSubTaskOngoing = async (req, res) => {
-  const { internId } = req.params;
-  const { milestoneId, taskIndex } = req.body;
-
-  try {
-    const milestone = await Milestone.findById(milestoneId);
-    milestone.tasks[taskIndex].status = 'ongoing';
-    milestone.tasks[taskIndex].completedBy = null;
-
-    milestone.status = calculateMilestoneStatus(milestone.tasks);
-    await milestone.save();
-
-    res.json(milestone);
-  } catch (error) {
-    console.error('Error marking subtask ongoing:', error);
-    res.status(500).json({ error: 'Something went wrong' });
-  }
-};
-
 
 
 exports.setMilestoneOngoing = async (req, res) => {

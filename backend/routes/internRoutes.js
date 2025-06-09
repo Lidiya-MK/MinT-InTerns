@@ -15,8 +15,7 @@ const {
   addSubTask,
   editSubTask,
   deleteSubTask,
-  markSubTaskCompleted,
-  markSubTaskOngoing,
+  toggleSubTaskStatus,
   setMilestoneOngoing,
   setMilestoneCompleted
   
@@ -66,8 +65,12 @@ router.put('/:milestoneId/editst', protect, editSubTask);
 router.delete('/:milestoneId/deletest', protect, deleteSubTask);
 
 // Task status management
-router.patch('/:milestoneId/stcompleted', protect, markSubTaskCompleted);
-router.patch('/:milestoneId/stongoing', protect, markSubTaskOngoing);
+router.patch(
+  "/toggleSubTask/:internId",
+  protect, 
+  toggleSubTaskStatus
+);
+
 router.patch('/:projectId/set-ongoing', protect,setMilestoneOngoing);
 router.patch('/:projectId/set-completed', protect, setMilestoneCompleted);
 

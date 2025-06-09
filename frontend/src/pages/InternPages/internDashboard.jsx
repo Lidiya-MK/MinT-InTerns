@@ -70,6 +70,34 @@ export default function InternDashboard() {
     }
   };
 
+ 
+const handleToggleSubtaskStatus = async (milestoneId, subtaskIndex, completedBy) => {
+  try {
+    const userId = intern._id; 
+    const token = localStorage.getItem("internToken");
+    const config = { headers: { Authorization: `Bearer ${token}` } };
+
+    // If another intern tries to toggle
+    if (completedBy && completedBy._id !== userId) {
+      toast.error("Only the intern who marked this subtask completed can change its status.");
+      return;
+    }
+
+    // Make PATCH request
+    await axios.patch(
+      `http://localhost:5000/api/interns/toggleSubTask/${userId}`,
+      { milestoneId, taskIndex: subtaskIndex },
+      config
+    );
+
+    toast.success("Subtask status updated!");
+    fetchInternData(); 
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to toggle subtask status.");
+  }
+};
+
   const handleAddSubtask = async (milestoneId) => {
     const taskName = subtaskInputs[milestoneId]?.trim();
     if (!taskName) return toast.error("Subtask name required");
@@ -132,6 +160,7 @@ export default function InternDashboard() {
         </button>
       </div>
 {/* CONTENT */}
+
 <div className="flex flex-col md:flex-row gap-4 md:gap-6">
   {activeTab === "projects" && (
     <div className="flex-1 bg-white p-4 md:p-6 rounded-xl border border-gray-300 shadow">
@@ -148,10 +177,11 @@ export default function InternDashboard() {
 
             project.milestones?.forEach((m) => {
               totalSubtasks += m.tasks?.length || 0;
-              completedSubtasks += m.tasks?.filter((st) => st.completed).length || 0;
+              completedSubtasks += m.tasks?.filter((st) => st.status === "completed").length || 0;
             });
 
-            const completedMilestones = project.milestones?.filter((m) => m.completed).length || 0;
+            const completedMilestones =
+              project.milestones?.filter((m) => m.completed).length || 0;
             const totalItems = totalMilestones + totalSubtasks;
             const completedItems = completedMilestones + completedSubtasks;
             const progress = totalItems === 0 ? 0 : (completedItems / totalItems) * 100;
@@ -203,7 +233,10 @@ export default function InternDashboard() {
                   <p className="text-sm font-semibold text-gray-700">Milestones:</p>
                   {project.milestones?.length > 0 ? (
                     project.milestones.map((milestone) => (
-                      <div key={milestone._id} className="bg-gray-50 p-2 rounded border text-sm">
+                      <div
+                        key={milestone._id}
+                        className="bg-gray-50 p-2 rounded border text-sm"
+                      >
                         <div className="flex justify-between items-center">
                           <div className="flex gap-1 items-center">
                             {milestone.completed ? (
@@ -215,13 +248,11 @@ export default function InternDashboard() {
                           </div>
                           <div className="flex gap-1">
                             <button
-                              
-                              className="text-blue-500 hover:text-blue-700"
+                              className="text-[#144145] hover:text-[#144145]"
                             >
                               <FiEdit />
                             </button>
                             <button
-                            
                               className="text-red-500 hover:text-red-700"
                             >
                               <FiTrash2 />
@@ -232,30 +263,37 @@ export default function InternDashboard() {
                         {/* Subtasks */}
                         <div className="ml-4 mt-1 space-y-1">
                           {milestone.tasks?.length > 0 ? (
-                            milestone.tasks.map((task) => (
+                            milestone.tasks.map((task, index) => (
                               <div
                                 key={task._id}
-                                className={`flex items-center justify-between text-xs p-1 rounded ${
-                                  task.completed ? "bg-green-50 text-green-700" : "bg-white"
+                                className={`flex justify-between items-center p-1 rounded ${
+                                  task.status === "completed"
+                                    ? "bg-green-50 text-green-700"
+                                    : "bg-white"
                                 }`}
                               >
                                 <div
-                                  className="flex items-center gap-1 cursor-pointer"
-                                  
+                                  className="flex items-center gap-2 cursor-pointer"
+                                  onClick={() =>
+                                    handleToggleSubtaskStatus(
+                                      milestone._id,
+                                      index,
+                                      task.completedBy
+                                    )
+                                  }
                                 >
-                                  {task.completed ? "🟢" : "⚪"} {task.name}
+                                  {task.status === "completed" ? "🟢" : "⚪"} {task.name}
+                                  {task.completedBy && (
+                                    <span className="text-xs italic text-gray-500">
+                                      (by {task.completedBy.name})
+                                    </span>
+                                  )}
                                 </div>
-                                <div className="flex gap-1">
-                                  <button
-                                   
-                                    className="text-blue-500 hover:text-blue-700"
-                                  >
+                                <div className="flex gap-3">
+                                  <button className="text-[#144145] hover:text-[#144145]">
                                     <FiEdit />
                                   </button>
-                                  <button
-                                  
-                                    className="text-red-500 hover:text-red-700"
-                                  >
+                                  <button className="text-red-500 hover:text-red-700">
                                     <FiTrash2 />
                                   </button>
                                 </div>
@@ -272,7 +310,10 @@ export default function InternDashboard() {
                               placeholder="New subtask"
                               value={subtaskInputs[milestone._id] || ""}
                               onChange={(e) =>
-                                handleSubtaskInputChange(milestone._id, e.target.value)
+                                handleSubtaskInputChange(
+                                  milestone._id,
+                                  e.target.value
+                                )
                               }
                               className="flex-1 p-1 border rounded text-xs"
                             />
@@ -297,7 +338,10 @@ export default function InternDashboard() {
                       placeholder="New milestone"
                       value={milestoneInputs[project._id] || ""}
                       onChange={(e) =>
-                        handleMilestoneInputChange(project._id, e.target.value)
+                        handleMilestoneInputChange(
+                          project._id,
+                          e.target.value
+                        )
                       }
                       className="flex-1 p-1 border rounded text-xs"
                     />
@@ -312,9 +356,6 @@ export default function InternDashboard() {
               </div>
             );
           })}
-      
-
-
               </div>
             )}
           </div>
