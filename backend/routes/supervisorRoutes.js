@@ -3,8 +3,8 @@ const router = express.Router();
 const { protect } = require('../middleware/supervisorAuthMiddleware');
 const { loginSupervisor,getInternsByCohort,createProject, getProjectsBySupervisor,
     getProjectById,getMilestoneById,
-toggleProjectStatus,
-toggleProjectOutcome
+toggleProjectStatus, updateAttendance,
+toggleProjectOutcome,updateProject, deleteProject
 
 } = require('../controllers/supervisorController');
 
@@ -16,6 +16,9 @@ router.get('/project/:projectId', protect, getProjectById);
 router.get("/milestone/:milestoneId", protect, getMilestoneById);
 router.patch('/:projectId/toggle-status', protect, toggleProjectStatus);
 router.patch('/:projectId/toggle-outcome', protect, toggleProjectOutcome);
+router.put('/project/:projectId', protect, updateProject);       
+router.delete('/project/:projectId', protect, deleteProject);    
+router.put('/intern/:internId/attendance', protect, updateAttendance);
 
 
 module.exports = router;

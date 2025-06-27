@@ -11,7 +11,15 @@ const internSchema = new mongoose.Schema({
   supervisor: { type: mongoose.Schema.Types.ObjectId, ref: 'Supervisor' },
   projects: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Project' }],
   status: { type: String, enum: ['pending', 'accepted', 'rejected'], default: 'pending' },
+ attendanceRecords: [
+  {
+    date: { type: Date, required: true },
+    attendanceStatus: { type: String, enum: ['present', 'absent'], required: true },
+  }
+],
+
   cohort: { type: mongoose.Schema.Types.ObjectId, ref: 'Cohort' , required:true}
 }, { timestamps: true });
+
 
 module.exports = mongoose.model('Intern', internSchema);

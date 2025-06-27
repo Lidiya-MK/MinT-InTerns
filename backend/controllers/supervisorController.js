@@ -87,12 +87,28 @@ exports.createProject = async (req, res) => {
     res.status(500).json({ message: "Failed to create project." });
   }
 };
-
 exports.getInternsByCohort = async (req, res) => {
   try {
     const { cohortId } = req.params;
 
-    const interns = await Intern.find({ cohort: cohortId }).populate('cohort', 'name'); 
+    const interns = await Intern.find({ cohort: cohortId }).populate('cohort', 'name');
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Automatically create today's attendance record if missing
+    for (let intern of interns) {
+      const hasTodayRecord = intern.attendanceRecords.some(record => {
+        const recordDate = new Date(record.date);
+        recordDate.setHours(0, 0, 0, 0);
+        return recordDate.getTime() === today.getTime();
+      });
+
+      if (!hasTodayRecord) {
+        intern.attendanceRecords.push({ date: today, attendanceStatus: 'present' });
+        await intern.save();
+      }
+    }
 
     res.status(200).json(interns);
   } catch (error) {
@@ -100,7 +116,6 @@ exports.getInternsByCohort = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch interns for this cohort' });
   }
 };
-
 
 exports.getOngoingCohorts = async (req, res) => {
   try {
@@ -254,5 +269,102 @@ exports.toggleProjectOutcome = async (req, res) => {
   } catch (error) {
     console.error("Error toggling project outcome:", error);
     res.status(500).json({ message: "Failed to toggle project outcome." });
+  }
+};
+
+
+// Update an existing project
+exports.updateProject = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const { name, description, leader, members, status, outcome } = req.body;
+
+    const project = await Project.findById(projectId);
+    if (!project) {
+      return res.status(404).json({ message: "Project not found." });
+    }
+
+    // Optional: Validate members exist
+    if (members && members.length > 0) {
+      const internsExist = await Intern.find({ _id: { $in: members } });
+      if (internsExist.length !== members.length) {
+        return res.status(404).json({ message: "One or more intern IDs are invalid." });
+      }
+
+      // Validate leader is among the members
+      if (leader && !members.includes(leader)) {
+        return res.status(400).json({ message: "Leader must be one of the members." });
+      }
+    }
+
+    // Update fields
+    if (name) project.name = name;
+    if (description) project.description = description;
+    if (leader) project.leader = leader;
+    if (members) project.members = members;
+    if (status) project.status = status;
+    if (outcome) project.outcome = outcome;
+
+    await project.save();
+
+    res.status(200).json({ message: "Project updated successfully.", project });
+  } catch (error) {
+    console.error("Error updating project:", error);
+    res.status(500).json({ message: "Failed to update project." });
+  }
+};
+
+
+// Delete a project
+exports.deleteProject = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+
+    const project = await Project.findById(projectId);
+    if (!project) {
+      return res.status(404).json({ message: "Project not found." });
+    }
+
+    await Project.findByIdAndDelete(projectId);
+
+    res.status(200).json({ message: "Project deleted successfully." });
+  } catch (error) {
+    console.error("Error deleting project:", error);
+    res.status(500).json({ message: "Failed to delete project." });
+  }
+};
+
+
+exports.updateAttendance = async (req, res) => {
+  try {
+    const { internId } = req.params;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize today's date to midnight
+
+    const intern = await Intern.findById(internId);
+    if (!intern) return res.status(404).json({ message: "Intern not found." });
+
+    // Find today's record
+    let existingRecord = intern.attendanceRecords.find(record => {
+      const recordDate = new Date(record.date);
+      recordDate.setHours(0, 0, 0, 0);
+      return recordDate.getTime() === today.getTime();
+    });
+
+    if (existingRecord) {
+      // Toggle status
+      existingRecord.attendanceStatus = existingRecord.attendanceStatus === 'present' ? 'absent' : 'present';
+    } else {
+      // If no record for today, create a new one with default 'present' then immediately toggle to 'absent'
+      intern.attendanceRecords.push({ date: today, attendanceStatus: 'absent' });
+    }
+
+    await intern.save();
+
+    res.status(200).json({ message: "Attendance updated successfully.", intern });
+  } catch (error) {
+    console.error("Error updating attendance:", error);
+    res.status(500).json({ message: "Failed to update attendance." });
   }
 };

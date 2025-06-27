@@ -25,7 +25,9 @@ import SupervisorsList from "./components/adminComponents/SupervisorsList";
 import AdministratorsList from "./components/adminComponents/AdministratorsList";
 
 //supervisor pags
+import SupervisorProjects from "./pages/SupervisorPages/SupervisorProjects";
 import SupervisorProjectDetails from "./pages/SupervisorPages/SupervisorProjectDetails";
+
 
 function App() {
   return (
@@ -55,6 +57,8 @@ function App() {
         
 
         <Route path="/supervisorDashboard/:supervisorId/:cohortId" element={<SupervisorDashboard />} />
+        <Route path="/supervisorProjects/:supervisorId/:cohortId" element={<SupervisorProjects />} />
+
 
         {/* Intern Dashboard */}
         <Route path="/internDashboard/:id" element={<InternDashboard />} />
