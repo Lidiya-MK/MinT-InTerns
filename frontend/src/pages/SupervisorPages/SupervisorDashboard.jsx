@@ -15,7 +15,8 @@ export default function SupervisorDashboard() {
   const [filteredInterns, setFilteredInterns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [attendance, setAttendance] = useState({}); // { internId: true/false }
+  const [attendance, setAttendance] = useState({});
+  const [absentCounts, setAbsentCounts] = useState({}); // { internId: numberOfAbsentDays }
 
   useEffect(() => {
     const fetchInterns = async () => {
@@ -34,11 +35,15 @@ export default function SupervisorDashboard() {
         setInterns(data);
         setFilteredInterns(data);
 
-        // Initialize attendance based on today's record (default present if no record)
+        // Initialize today's attendance and absent count
         const initialAttendance = {};
+        const absentCountMap = {};
+
         data.forEach((intern) => {
           const today = new Date();
           today.setHours(0, 0, 0, 0);
+
+          // Find today's attendance record
           const todayRecord = intern.attendanceRecords?.find((record) => {
             const recordDate = new Date(record.date);
             recordDate.setHours(0, 0, 0, 0);
@@ -48,8 +53,17 @@ export default function SupervisorDashboard() {
           initialAttendance[intern._id] = todayRecord
             ? todayRecord.attendanceStatus === "present"
             : true; // default present
+
+          // Count total absent days
+          const absentDays = intern.attendanceRecords?.filter(
+            (record) => record.attendanceStatus === "absent"
+          ).length;
+
+          absentCountMap[intern._id] = absentDays || 0;
         });
+
         setAttendance(initialAttendance);
+        setAbsentCounts(absentCountMap);
       } catch (err) {
         toast.error("Error fetching interns.", err);
       } finally {
@@ -68,7 +82,6 @@ export default function SupervisorDashboard() {
     setFilteredInterns(filtered);
   }, [searchQuery, interns]);
 
-  // New toggleAttendance function to call backend and update UI accordingly
   const toggleAttendance = async (internId) => {
     try {
       const token = localStorage.getItem("supervisorToken");
@@ -86,7 +99,18 @@ export default function SupervisorDashboard() {
       }
 
       // Toggle locally after successful backend update
-      setAttendance((prev) => ({ ...prev, [internId]: !prev[internId] }));
+      setAttendance((prev) => {
+        const newStatus = !prev[internId];
+
+        // Adjust absent count locally
+        setAbsentCounts((counts) => ({
+          ...counts,
+          [internId]: newStatus ? counts[internId] - 1 : counts[internId] + 1,
+        }));
+
+        return { ...prev, [internId]: newStatus };
+      });
+
       toast.success("Attendance updated");
     } catch (err) {
       toast.error(err.message);
@@ -98,30 +122,20 @@ export default function SupervisorDashboard() {
       {/* Header */}
       <header className="bg-white text-black py-4 px-6 flex items-center justify-between rounded-b-3xl shadow-md">
         <div className="flex items-center gap-3">
-          <img
-            src={avatar}
-            alt="Avatar"
-            className="h-10 w-10 rounded-full object-cover"
-          />
-          <h1 className="text-xl sm:text-2xl font-semibold text-black">
-            Welcome, {supervisorName}
-          </h1>
+          <img src={avatar} alt="Avatar" className="h-10 w-10 rounded-full object-cover" />
+          <h1 className="text-xl sm:text-2xl font-semibold text-black">Welcome, {supervisorName}</h1>
         </div>
 
         <div className="flex gap-4">
           <button
             className="px-4 py-2 bg-[#144145] text-white rounded-2xl font-semibold"
-            onClick={() =>
-              navigate(`/supervisorDashboard/${supervisorId}/${cohortId}`)
-            }
+            onClick={() => navigate(`/supervisorDashboard/${supervisorId}/${cohortId}`)}
           >
             Interns
           </button>
           <button
             className="px-4 py-2 border border-[#144145] text-[#144145] rounded-2xl font-semibold hover:bg-[#144145] hover:text-white"
-            onClick={() =>
-              navigate(`/supervisorProjects/${supervisorId}/${cohortId}`)
-            }
+            onClick={() => navigate(`/supervisorProjects/${supervisorId}/${cohortId}`)}
           >
             Projects
           </button>
@@ -149,18 +163,12 @@ export default function SupervisorDashboard() {
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
               {filteredInterns.map((intern) => (
-                <div
-                  key={intern._id}
-                  className="bg-[#2a2a2a] p-4 rounded-xl shadow space-y-2"
-                >
+                <div key={intern._id} className="bg-[#2a2a2a] p-4 rounded-xl shadow space-y-2">
                   <div className="flex items-center gap-4">
                     <img
                       src={
                         intern.profilePicture
-                          ? `http://localhost:5000/${intern.profilePicture.replace(
-                              /\\/g,
-                              "/"
-                            )}`
+                          ? `http://localhost:5000/${intern.profilePicture.replace(/\\/g, "/")}`
                           : defaultAvatar
                       }
                       alt={intern.name || "Intern"}
@@ -173,6 +181,7 @@ export default function SupervisorDashboard() {
                     <div>
                       <p className="font-semibold">{intern.name || "Unnamed Intern"}</p>
                       <p className="text-sm text-gray-400">{intern.email || "No email"}</p>
+                      <p className="text-sm text-gray-400">Absent Days: {absentCounts[intern._id]}</p>
                       <p className="text-sm text-gray-400">CGPA: {intern.CGPA ?? "N/A"}</p>
                     </div>
                   </div>

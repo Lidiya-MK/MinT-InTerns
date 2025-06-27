@@ -133,7 +133,7 @@ exports.addMilestone = async (req, res) => {
   const { projectId, name } = req.body;
 
   try {
-    // First, find the project
+    
     const project = await Project.findById(projectId);
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
