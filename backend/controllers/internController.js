@@ -172,9 +172,7 @@ exports.addSubTask = async (req, res) => {
     res.status(500).json({ error: 'Something went wrong' });
   }
 };
-
 exports.editMilestone = async (req, res) => {
-  const { internId } = req.params;
   const { milestoneId, name } = req.body;
 
   try {
@@ -183,10 +181,7 @@ exports.editMilestone = async (req, res) => {
       return res.status(404).json({ message: 'Milestone not found.' });
     }
 
-    if (!milestone.project || milestone.project.leader.toString() !== internId) {
-      return res.status(403).json({ message: 'Only the project leader can edit milestones.' });
-    }
-
+    // Remove leader check – allow any intern to edit milestone
     if (name) {
       milestone.name = name;
       await milestone.save();
@@ -200,7 +195,6 @@ exports.editMilestone = async (req, res) => {
 };
 
 exports.deleteMilestone = async (req, res) => {
-  const { internId } = req.params;
   const { milestoneId } = req.body;
 
   try {
@@ -209,16 +203,11 @@ exports.deleteMilestone = async (req, res) => {
       return res.status(404).json({ message: 'Milestone not found.' });
     }
 
-    if (!milestone.project || milestone.project.leader.toString() !== internId) {
-      return res.status(403).json({ message: 'Only the project leader can delete milestones.' });
-    }
-
-    
+    // Remove leader check – allow any intern to delete milestone
     await Project.findByIdAndUpdate(milestone.project._id, {
-      $pull: { milestones: milestone._id }
+      $pull: { milestones: milestone._id },
     });
 
-   
     await Milestone.findByIdAndDelete(milestoneId);
 
     res.json({ message: 'Milestone deleted successfully' });
@@ -228,18 +217,16 @@ exports.deleteMilestone = async (req, res) => {
   }
 };
 
-
-
 exports.editSubTask = async (req, res) => {
-  const { internId } = req.params;
   const { milestoneId, taskIndex, taskName } = req.body;
 
   try {
     const milestone = await Milestone.findById(milestoneId).populate('project');
-    if (!milestone || milestone.project.leader.toString() !== internId) {
-      return res.status(403).json({ message: 'Only the project leader can edit subtasks.' });
+    if (!milestone) {
+      return res.status(404).json({ message: 'Milestone not found.' });
     }
 
+    // Remove leader check – allow any intern to edit subtasks
     milestone.tasks[taskIndex].name = taskName;
     await milestone.save();
 
@@ -251,15 +238,15 @@ exports.editSubTask = async (req, res) => {
 };
 
 exports.deleteSubTask = async (req, res) => {
-  const { internId } = req.params;
   const { milestoneId, taskIndex } = req.body;
 
   try {
     const milestone = await Milestone.findById(milestoneId).populate('project');
-    if (!milestone || milestone.project.leader.toString() !== internId) {
-      return res.status(403).json({ message: 'Only the project leader can delete subtasks.' });
+    if (!milestone) {
+      return res.status(404).json({ message: 'Milestone not found.' });
     }
 
+    // Remove leader check – allow any intern to delete subtasks
     milestone.tasks.splice(taskIndex, 1);
     milestone.status = calculateMilestoneStatus(milestone.tasks);
     await milestone.save();
@@ -270,6 +257,7 @@ exports.deleteSubTask = async (req, res) => {
     res.status(500).json({ error: 'Something went wrong' });
   }
 };
+
 exports.toggleSubTaskStatus = async (req, res) => {
   const { internId } = req.params;
   const { milestoneId, taskIndex } = req.body;
@@ -304,16 +292,18 @@ exports.toggleMilestoneStatus = async (req, res) => {
       return res.status(404).json({ message: 'Milestone not found' });
     }
 
-    // Check if there are any tasks
     const hasTasks = milestone.tasks && milestone.tasks.length > 0;
-
-    // Check if all tasks are completed
     const allTasksCompleted = hasTasks && milestone.tasks.every(task => task.status === 'completed');
 
-    let newStatus = 'ongoing';
+    let newStatus = 'ongoing'; // default
 
     if (hasTasks && allTasksCompleted) {
       newStatus = 'completed';
+    }
+
+    // If no tasks at all, make sure it's not marked as completed
+    if (!hasTasks) {
+      newStatus = 'ongoing';
     }
 
     milestone.status = newStatus;

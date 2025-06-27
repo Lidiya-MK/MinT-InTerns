@@ -5,6 +5,7 @@ const Cohort = require('../models/Cohort');
 const Intern= require('../models/Intern')
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const Milestone = require("../models/Milestone"); 
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -46,11 +47,11 @@ exports.loginSupervisor = async (req, res) => {
 
 exports.createProject = async (req, res) => {
   try {
-    const supervisorId = req.supervisor._id; // Assumes auth middleware attaches this
-    const { name, description, leader, members } = req.body;
+    const supervisorId = req.supervisor._id; // Comes from auth middleware
+    const { cohortId, name, description, leader, members } = req.body;
 
-    if (!name || !description || !leader || !members || !Array.isArray(members)) {
-      return res.status(400).json({ message: "Missing or invalid fields. Ensure name, description, leader, and members are provided." });
+    if (!cohortId || !name || !description || !leader || !members || !Array.isArray(members)) {
+      return res.status(400).json({ message: "Missing or invalid fields. Ensure cohortId, name, description, leader, and members are provided." });
     }
 
     // Check that leader is among the members
@@ -70,8 +71,9 @@ exports.createProject = async (req, res) => {
       leader,
       members,
       supervisor: supervisorId,
-      status: 'open', 
-      outcome: 'unknown' 
+      cohort: cohortId,
+      status: 'open',
+      outcome: 'unknown'
     });
 
     await newProject.save();
@@ -85,8 +87,6 @@ exports.createProject = async (req, res) => {
     res.status(500).json({ message: "Failed to create project." });
   }
 };
-
-
 
 exports.getInternsByCohort = async (req, res) => {
   try {
@@ -124,7 +124,7 @@ exports.getOngoingCohorts = async (req, res) => {
 
 exports.getProjectsBySupervisor = async (req, res) => {
   try {
-    const supervisorId = req.params.supervisorId;
+    const { supervisorId, cohortId } = req.params;
 
     // Validate if supervisor exists
     const supervisor = await Supervisor.findById(supervisorId);
@@ -132,14 +132,127 @@ exports.getProjectsBySupervisor = async (req, res) => {
       return res.status(404).json({ message: "Supervisor not found." });
     }
 
-    const projects = await Project.find({ supervisor: supervisorId })
-      .populate('leader', 'name email') 
-      .populate('members', 'name email') 
-      .sort({ createdAt: -1 }); 
+    // Fetch projects by supervisor and cohort
+    const projects = await Project.find({
+      supervisor: supervisorId,
+      cohort: cohortId,
+    })
+      .populate('leader', 'name email')
+      .populate('members', 'name email')
+      .sort({ createdAt: -1 });
 
     res.status(200).json(projects);
   } catch (error) {
-    console.error("Error fetching projects by supervisor:", error);
+    console.error("Error fetching projects by supervisor and cohort:", error);
     res.status(500).json({ message: "Failed to fetch projects." });
+  }
+};
+
+
+
+exports.getProjectById = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+
+    const project = await Project.findById(projectId)
+      .populate('leader', 'name email') // populating leader details
+      .populate('members', 'name email'); // populating members details
+
+    if (!project) {
+      return res.status(404).json({ message: "Project not found." });
+    }
+
+    res.status(200).json(project);
+  } catch (error) {
+    console.error("Error fetching project by ID:", error);
+    res.status(500).json({ message: "Failed to fetch project." });
+  }
+};
+
+
+
+// Get milestone by ID
+exports.getMilestoneById = async (req, res) => {
+  try {
+    const { milestoneId } = req.params;
+
+    const milestone = await Milestone.findById(milestoneId)
+      .populate({
+        path: "tasks.completedBy",
+        select: "name email"
+      });
+
+    if (!milestone) {
+      return res.status(404).json({ message: "Milestone not found." });
+    }
+
+    res.status(200).json(milestone);
+  } catch (error) {
+    console.error("Error fetching milestone by ID:", error);
+    res.status(500).json({ message: "Failed to fetch milestone." });
+  }
+};
+
+
+exports.toggleProjectStatus = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+
+    const project = await Project.findById(projectId);
+    if (!project) {
+      return res.status(404).json({ message: "Project not found." });
+    }
+
+    // Toggle status
+    project.status = project.status === 'open' ? 'closed' : 'open';
+
+    // If the project is opened, reset the outcome to 'unknown'
+    if (project.status === 'open') {
+      project.outcome = 'unknown';
+    }
+
+    await project.save();
+
+    res.status(200).json({
+      message: `Project status updated to ${project.status}.`,
+      project
+    });
+  } catch (error) {
+    console.error("Error toggling project status:", error);
+    res.status(500).json({ message: "Failed to toggle project status." });
+  }
+};
+
+
+exports.toggleProjectOutcome = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+
+    const project = await Project.findById(projectId);
+    if (!project) {
+      return res.status(404).json({ message: "Project not found." });
+    }
+
+    // Allow toggling only if project is closed
+    if (project.status !== 'closed') {
+      return res.status(400).json({ message: "You can only set an outcome for closed projects." });
+    }
+
+    // Toggle between successful and failed
+    if (project.outcome === 'successful') {
+      project.outcome = 'failed';
+    } else if (project.outcome === 'failed' || project.outcome === 'unknown') {
+      project.outcome = 'successful';
+    }
+
+    await project.save();
+
+    res.status(200).json({
+      message: `Project outcome updated to ${project.outcome}.`,
+      project
+    });
+  } catch (error) {
+    console.error("Error toggling project outcome:", error);
+    res.status(500).json({ message: "Failed to toggle project outcome." });
   }
 };

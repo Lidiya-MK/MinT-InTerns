@@ -71,6 +71,7 @@ export default function InternDashboard() {
   };
 
  
+  
 const handleToggleSubtaskStatus = async (milestoneId, subtaskIndex, completedBy) => {
   try {
     const userId = intern._id; 
@@ -142,10 +143,10 @@ const handleToggleSubtaskStatus = async (milestoneId, subtaskIndex, completedBy)
           </div>
         </div>
         <div className="flex gap-4">
-          <Link to="/company-chats" className="flex items-center gap-2 px-3 py-2 rounded-md text-white bg-[#144145] hover:bg-[#0e2d30] transition shadow">
+          {/* <Link to="/company-chats" className="flex items-center gap-2 px-3 py-2 rounded-md text-white bg-[#144145] hover:bg-[#0e2d30] transition shadow">
             <FiSend size={18} />
             <span className="text-sm">Messages</span>
-          </Link>
+          </Link> */}
           <img src={logo} alt="System Logo" className="h-10 w-auto" />
         </div>
       </header>
@@ -159,6 +160,58 @@ const handleToggleSubtaskStatus = async (milestoneId, subtaskIndex, completedBy)
           Profile
         </button>
       </div>
+{activeTab === "profile" && (
+  <div className="flex-1 bg-white p-6 rounded-xl border border-gray-300 shadow max-w-md mx-auto">
+    {/* Profile Picture */}
+    <img
+      src={getImageUrl(intern?.profilePicture)}
+      alt={`${intern.name}'s profile`}
+      className="w-32 h-32 rounded-full border-4 border-[#1D7F8C] shadow-md object-cover mb-6 mx-auto"
+    />
+
+    {/* Name */}
+    <p className="text-xl font-semibold mb-2 text-center">{intern.name}</p>
+
+    {/* Current Email */}
+    <p className="text-gray-700 mb-6 text-center">{intern.email}</p>
+
+    {/* Update Email */}
+    <div className="mb-4">
+      <label htmlFor="email" className="block mb-1 font-medium text-gray-700">
+        Update Email
+      </label>
+      <input
+        id="email"
+        type="email"
+        placeholder="Enter new email"
+        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1D7F8C] focus:border-transparent"
+      />
+    </div>
+
+    {/* Update Password */}
+    <div className="mb-6">
+      <label htmlFor="password" className="block mb-1 font-medium text-gray-700">
+        Update Password
+      </label>
+      <input
+        id="password"
+        type="password"
+        placeholder="Enter new password"
+        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1D7F8C] focus:border-transparent"
+      />
+    </div>
+
+    {/* Save Changes Button */}
+    <button
+      className="w-full bg-[#1D7F8C] hover:bg-[#155c60] text-white font-semibold py-2 rounded-md transition"
+    >
+      Save Changes
+    </button>
+  </div>
+)}
+
+
+      
 {/* CONTENT */}
 <div className="flex flex-col md:flex-row gap-4 md:gap-6">
   {activeTab === "projects" && (
@@ -170,7 +223,6 @@ const handleToggleSubtaskStatus = async (milestoneId, subtaskIndex, completedBy)
       ) : (
         <div className="space-y-4">
           {projects.map((project) => {
-            // Calculate progress based ONLY on subtasks
             let totalSubtasks = 0;
             let completedSubtasks = 0;
 
@@ -184,6 +236,10 @@ const handleToggleSubtaskStatus = async (milestoneId, subtaskIndex, completedBy)
               totalSubtasks === 0
                 ? 0
                 : (completedSubtasks / totalSubtasks) * 100;
+
+            // Check if the logged-in user is the leader
+            const isLeader =
+              intern?.email === project?.leader?.email;
 
             return (
               <div
@@ -209,7 +265,6 @@ const handleToggleSubtaskStatus = async (milestoneId, subtaskIndex, completedBy)
                 </div>
                 <p className="text-gray-600 mb-1">{project.description}</p>
 
-                {/* Project Leader */}
                 {project.leader && (
                   <div className="mt-2 text-sm text-gray-800">
                     <p className="font-semibold">⭐ Project Leader:</p>
@@ -218,7 +273,6 @@ const handleToggleSubtaskStatus = async (milestoneId, subtaskIndex, completedBy)
                   </div>
                 )}
 
-                {/* Project Members */}
                 {project.members?.length > 0 && (
                   <div className="mt-2 text-sm text-gray-800">
                     <p className="font-semibold">👥 Members:</p>
@@ -232,9 +286,10 @@ const handleToggleSubtaskStatus = async (milestoneId, subtaskIndex, completedBy)
                   </div>
                 )}
 
-                {/* Milestones */}
                 <div className="mt-4 space-y-2">
-                  <p className="text-sm font-semibold text-gray-700">Milestones:</p>
+                  <p className="text-sm font-semibold text-gray-700">
+                    Milestones:
+                  </p>
                   {project.milestones?.length > 0 ? (
                     project.milestones.map((milestone) => (
                       <div
@@ -265,17 +320,20 @@ const handleToggleSubtaskStatus = async (milestoneId, subtaskIndex, completedBy)
                               </span>
                             </div>
                           </div>
-                          <div className="flex gap-1">
-                            <button className="text-[#144145] hover:text-[#144145]">
-                              <FiEdit />
-                            </button>
-                            <button className="text-red-500 hover:text-red-700">
-                              <FiTrash2 />
-                            </button>
-                          </div>
+
+                        
+                          {milestone.status !== "completed" && isLeader && (
+                            <div className="flex gap-1">
+                              <button className="text-[#144145] hover:text-[#144145]">
+                                <FiEdit />
+                              </button>
+                              <button className="text-red-500 hover:text-red-700">
+                                <FiTrash2 />
+                              </button>
+                            </div>
+                          )}
                         </div>
 
-                        {/* Subtasks */}
                         <div className="ml-4 mt-1 space-y-1">
                           {milestone.tasks?.length > 0 ? (
                             milestone.tasks.map((task, index) => (
@@ -297,7 +355,8 @@ const handleToggleSubtaskStatus = async (milestoneId, subtaskIndex, completedBy)
                                     )
                                   }
                                 >
-                                  {task.status === "completed" ? "🟢" : "⚪"} {task.name}
+                                  {task.status === "completed" ? "🟢" : "⚪"}{" "}
+                                  {task.name}
                                   {task.completedBy && (
                                     <span className="text-xs italic text-gray-500">
                                       (by {task.completedBy.name})
@@ -305,8 +364,8 @@ const handleToggleSubtaskStatus = async (milestoneId, subtaskIndex, completedBy)
                                   )}
                                 </div>
 
-                                {/* Hide Edit and Delete if completed */}
-                                {task.status !== "completed" && (
+                                
+                                {task.status !== "completed"  && (
                                   <div className="flex gap-3">
                                     <button className="text-[#144145] hover:text-[#144145]">
                                       <FiEdit />
@@ -319,30 +378,36 @@ const handleToggleSubtaskStatus = async (milestoneId, subtaskIndex, completedBy)
                               </div>
                             ))
                           ) : (
-                            <p className="text-xs text-gray-500">No subtasks yet.</p>
+                            <p className="text-xs text-gray-500">
+                              No subtasks yet.
+                            </p>
                           )}
 
-                          {/* Add subtask input */}
-                          <div className="flex items-center gap-2 mt-1">
-                            <input
-                              type="text"
-                              placeholder="New subtask"
-                              value={subtaskInputs[milestone._id] || ""}
-                              onChange={(e) =>
-                                handleSubtaskInputChange(
-                                  milestone._id,
-                                  e.target.value
-                                )
-                              }
-                              className="flex-1 p-1 border rounded text-xs"
-                            />
-                            <button
-                              onClick={() => handleAddSubtask(milestone._id)}
-                              className="bg-[#EA9753] hover:bg-[#d2782c] text-white rounded p-1"
-                            >
-                              <FiPlus />
-                            </button>
-                          </div>
+                          {/* Add subtask input - Only for leader */}
+                          {isLeader && (
+                            <div className="flex items-center gap-2 mt-1">
+                              <input
+                                type="text"
+                                placeholder="New subtask"
+                                value={subtaskInputs[milestone._id] || ""}
+                                onChange={(e) =>
+                                  handleSubtaskInputChange(
+                                    milestone._id,
+                                    e.target.value
+                                  )
+                                }
+                                className="flex-1 p-1 border rounded text-xs"
+                              />
+                              <button
+                                onClick={() =>
+                                  handleAddSubtask(milestone._id)
+                                }
+                                className="bg-[#EA9753] hover:bg-[#d2782c] text-white rounded p-1"
+                              >
+                                <FiPlus />
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))
@@ -350,31 +415,35 @@ const handleToggleSubtaskStatus = async (milestoneId, subtaskIndex, completedBy)
                     <p className="text-xs text-gray-500">No milestones yet.</p>
                   )}
 
-                  {/* Add milestone input */}
-                  <div className="flex items-center gap-2 mt-2">
-                    <input
-                      type="text"
-                      placeholder="New milestone"
-                      value={milestoneInputs[project._id] || ""}
-                      onChange={(e) =>
-                        handleMilestoneInputChange(project._id, e.target.value)
-                      }
-                      className="flex-1 p-1 border rounded text-xs"
-                    />
-                    <button
-                      onClick={() => handleAddMilestone(project._id)}
-                      className="bg-[#144145] hover:bg-[#0e2d30] text-white rounded p-1"
-                    >
-                      <FiPlus />
-                    </button>
-                  </div>
+                  {/* Add milestone input - Only for leader */}
+                  {isLeader && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <input
+                        type="text"
+                        placeholder="New milestone"
+                        value={milestoneInputs[project._id] || ""}
+                        onChange={(e) =>
+                          handleMilestoneInputChange(
+                            project._id,
+                            e.target.value
+                          )
+                        }
+                        className="flex-1 p-1 border rounded text-xs"
+                      />
+                      <button
+                        onClick={() => handleAddMilestone(project._id)}
+                        className="bg-[#144145] hover:bg-[#0e2d30] text-white rounded p-1"
+                      >
+                        <FiPlus />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             );
           })}
-      
-        
-              </div>
+  
+        </div>
             )}
           </div>
         )}

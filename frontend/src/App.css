@@ -1,7 +1,14 @@
 
 body {
-  @apply font-mont;
+  
 }
+
+.print-safe * {
+  color: #000 !important;
+  background-color: #fff !important;
+  border-color: #000 !important;
+}
+
 
 .drop-shadow-glow {
   text-shadow: 0 0 8px rgba(129, 140, 248, 0.8);

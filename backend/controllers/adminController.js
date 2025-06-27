@@ -58,7 +58,12 @@ exports.getAvailableSlots = async (req, res) => {
       return res.status(404).json({ message: "Cohort not found." });
     }
 
-    const acceptedCount = await Intern.countDocuments({ status: 'accepted' });
+  
+    const acceptedCount = await Intern.countDocuments({
+      status: 'accepted',
+      cohort: cohortId
+    });
+
     const freeSlots = Math.max(cohort.maxInterns - acceptedCount, 0);
 
     res.status(200).json({ freeSlots });
@@ -67,7 +72,6 @@ exports.getAvailableSlots = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 
 exports.createSupervisor = async (req, res) => {

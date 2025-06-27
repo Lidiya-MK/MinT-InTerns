@@ -6,6 +6,7 @@ const projectSchema = new mongoose.Schema({
   supervisor: { type: mongoose.Schema.Types.ObjectId, ref: 'Supervisor', required: true },
   milestones: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Milestone' }],
   description: { type: String },
+  cohort: { type: mongoose.Schema.Types.ObjectId, ref: 'Cohort'},
   name: { type: String },
   status: { type: String, enum: ['open', 'closed'], default: 'open' },
 

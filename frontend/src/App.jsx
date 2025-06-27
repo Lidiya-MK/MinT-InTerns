@@ -24,6 +24,9 @@ import Settings from "./components/adminComponents/Settings";
 import SupervisorsList from "./components/adminComponents/SupervisorsList";
 import AdministratorsList from "./components/adminComponents/AdministratorsList";
 
+//supervisor pags
+import SupervisorProjectDetails from "./pages/SupervisorPages/SupervisorProjectDetails";
+
 function App() {
   return (
     <Router>
@@ -49,6 +52,7 @@ function App() {
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/admin/supervisors" element={<SupervisorsList />} />
         <Route path="/admin/administrators" element={<AdministratorsList />} />
+        
 
         <Route path="/supervisorDashboard/:supervisorId/:cohortId" element={<SupervisorDashboard />} />
 
@@ -63,6 +67,11 @@ function App() {
           path="/admin/cohort/:cohortId/accepted"
           element={<AcceptedInternsPage />}
         />
+
+         <Route
+    path="/supervisor/:supervisorId/:cohortId/project/:projectId"
+    element={<SupervisorProjectDetails />}
+  />
         <Route
           path="/admin/register-supervisor"
           element={<Registration view="register-supervisor" />}
@@ -71,6 +80,7 @@ function App() {
           path="/admin/register-admin"
           element={<Registration view="register-admin" />}
         />
+       
         <Route path="/admin/settings" element={<Settings />} />
       </Routes>
     </Router>

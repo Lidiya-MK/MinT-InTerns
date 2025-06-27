@@ -57,6 +57,8 @@ router.get('/:internId/projects', protect, getProjectsByInternId);
 router.post('/addms', protect, addMilestone);
 router.put('/:projectId/editms', protect, editMilestone);
 router.delete('/:projectId/deletems', protect, deleteMilestone);
+// router.patch(`/toggleStatus/:milestoneId`);
+
 
 // Subtasks
 router.post('/addst', protect, addSubTask);

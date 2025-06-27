@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react"
 import * as Label from "@radix-ui/react-label"
 import toast from "react-hot-toast"
+import {
+  Mail,
+  User,
+  School,
+  FileText,
+  Image as ImageIcon,
+  FileUp,
+} from "lucide-react"
 
 const universities = [
   "Adama Science and Technology University",
@@ -34,6 +42,16 @@ const universities = [
   "Wollega University",
   "Wollo University",
 ]
+
+const initialFormState = {
+  name: "",
+  email: "",
+  university: "",
+  cgpa: "",
+  profile: null,
+  documents: [],
+  cohort: "",
+};
 
 const Form = () => {
   const [form, setForm] = useState({
@@ -82,14 +100,14 @@ const Form = () => {
     formData.append("email", form.email)
     formData.append("university", form.university)
     formData.append("CGPA", form.cgpa)
-   const selectedCohort = cohorts.find((c) => c.name === form.cohort)
-if (!selectedCohort) {
-  toast.error("Invalid cohort selected.")
-  return
-}
-formData.append("cohort", selectedCohort._id)
 
-    
+    const selectedCohort = cohorts.find((c) => c.name === form.cohort)
+    if (!selectedCohort) {
+      toast.error("Invalid cohort selected.")
+      return
+    }
+
+    formData.append("cohort", selectedCohort._id)
 
     if (form.profile) {
       formData.append("profilePicture", form.profile)
@@ -119,6 +137,7 @@ formData.append("cohort", selectedCohort._id)
         },
       })
 
+      setForm(initialFormState);
       console.log(data)
     } catch (err) {
       console.error(err)
@@ -127,63 +146,76 @@ formData.append("cohort", selectedCohort._id)
   }
 
   return (
-    <div className="min-h-screen py-16 px-6 md:px-20 bg-zinc-50">
-      <h1 className="text-4xl font-bold mb-10 text-center text-[#144145]">
-        Internship Application Form
-      </h1>
+    <div className="min-h-screen bg-[#144145] flex flex-col items-center py-10 px-4">
+      <header className="flex items-center space-x-4 p-4 mb-10 bg-white rounded-2xl shadow-md">
+        
+        <h1 className="text-2xl sm:text-3xl font-bold text-[#144145]">
+          Internship Application Form
+        </h1>
+      </header>
+
       <form
         onSubmit={handleSubmit}
-        className="max-w-3xl mx-auto bg-white p-10 rounded-2xl shadow-lg border space-y-8"
+        className="w-full max-w-xl bg-white p-8 sm:p-10 rounded-2xl shadow-xl space-y-6"
       >
         <div>
           <Label.Root htmlFor="name" className="block mb-2 font-medium">
             Full Name
           </Label.Root>
-          <input
-            type="text"
-            name="name"
-            id="name"
-            value={form.name}
-            onChange={handleChange}
-            required
-            className="w-full p-3 rounded-lg border bg-zinc-100"
-          />
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <input
+              type="text"
+              name="name"
+              id="name"
+              value={form.name}
+              onChange={handleChange}
+              required
+              className="w-full p-3 pl-10 rounded-lg border bg-zinc-100"
+            />
+          </div>
         </div>
 
         <div>
           <Label.Root htmlFor="email" className="block mb-2 font-medium">
             Email
           </Label.Root>
-          <input
-            type="email"
-            name="email"
-            id="email"
-            value={form.email}
-            onChange={handleChange}
-            required
-            className="w-full p-3 rounded-lg border bg-zinc-100"
-          />
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <input
+              type="email"
+              name="email"
+              id="email"
+              value={form.email}
+              onChange={handleChange}
+              required
+              className="w-full p-3 pl-10 rounded-lg border bg-zinc-100"
+            />
+          </div>
         </div>
 
         <div>
           <Label.Root htmlFor="university" className="block mb-2 font-medium">
             University
           </Label.Root>
-          <input
-            list="university-list"
-            name="university"
-            id="university"
-            value={form.university}
-            onChange={handleChange}
-            required
-            placeholder="Start typing..."
-            className="w-full p-3 rounded-lg border bg-zinc-100"
-          />
-          <datalist id="university-list">
-            {universities.map((uni) => (
-              <option key={uni} value={uni} />
-            ))}
-          </datalist>
+          <div className="relative">
+            <School className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <input
+              list="university-list"
+              name="university"
+              id="university"
+              value={form.university}
+              onChange={handleChange}
+              required
+              placeholder="Start typing..."
+              className="w-full p-3 pl-10 rounded-lg border bg-zinc-100"
+            />
+            <datalist id="university-list">
+              {universities.map((uni) => (
+                <option key={uni} value={uni} />
+              ))}
+            </datalist>
+          </div>
         </div>
 
         <div>
@@ -218,10 +250,9 @@ formData.append("cohort", selectedCohort._id)
           >
             <option value="">-- Select a cohort --</option>
             {cohorts.map((cohort) => (
-             <option key={cohort._id} value={cohort.name}>
-  {cohort.name}
-</option>
-
+              <option key={cohort._id} value={cohort.name}>
+                {cohort.name}
+              </option>
             ))}
           </select>
         </div>
@@ -230,30 +261,36 @@ formData.append("cohort", selectedCohort._id)
           <Label.Root htmlFor="profile" className="block mb-2 font-medium">
             Profile Picture
           </Label.Root>
-          <input
-            type="file"
-            name="profile"
-            id="profile"
-            accept="image/*"
-            onChange={handleChange}
-            required
-            className="w-full p-2 rounded-lg border bg-zinc-100"
-          />
+          <div className="relative">
+            <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <input
+              type="file"
+              name="profile"
+              id="profile"
+              accept="image/*"
+              onChange={handleChange}
+              required
+              className="w-full p-2 pl-10 rounded-lg border bg-zinc-100"
+            />
+          </div>
         </div>
 
         <div>
           <Label.Root htmlFor="documents" className="block mb-2 font-medium">
-            Upload a clear image of your latest university transcript
+            Upload Transcript
           </Label.Root>
-          <input
-            type="file"
-            name="documents"
-            id="documents"
-            multiple
-            accept="image/*,application/pdf"
-            onChange={handleChange}
-            className="w-full p-2 rounded-lg border bg-zinc-100"
-          />
+          <div className="relative">
+            <FileUp className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <input
+              type="file"
+              name="documents"
+              id="documents"
+              multiple
+              accept="image/*,application/pdf"
+              onChange={handleChange}
+              className="w-full p-2 pl-10 rounded-lg border bg-zinc-100"
+            />
+          </div>
         </div>
 
         <button

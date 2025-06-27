@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { FiSearch, FiEdit2, FiTrash2 } from "react-icons/fi";
 import defaultAvatar from "../../assets/default-avatar.png";
 import logo from "../../assets/logo.png";
+import avatar from "../../assets/default-avatar.png";
 import placeholderImage from "../../assets/placeholder.png";
 
 export default function SupervisorDashboard() {
   const { supervisorId, cohortId } = useParams();
+  const navigate = useNavigate();
+
   const [activeTab, setActiveTab] = useState("interns");
   const [supervisorName] = useState("Supervisor");
 
@@ -19,7 +22,12 @@ export default function SupervisorDashboard() {
 
   const [projects, setProjects] = useState([]);
   const [showProjectForm, setShowProjectForm] = useState(false);
-  const [newProject, setNewProject] = useState({ name: "", leader: "", description: "", members: [] });
+  const [newProject, setNewProject] = useState({
+    name: "",
+    leader: "",
+    description: "",
+    members: [],
+  });
   const [teamLeadSearch, setTeamLeadSearch] = useState("");
 
   useEffect(() => {
@@ -27,9 +35,12 @@ export default function SupervisorDashboard() {
       setLoading(true);
       try {
         const token = localStorage.getItem("supervisorToken");
-        const res = await fetch(`http://localhost:5000/api/supervisor/cohort/${cohortId}/interns`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch(
+          `http://localhost:5000/api/supervisor/cohort/${cohortId}/interns`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         const data = await res.json();
         if (!res.ok) throw new Error(data?.message);
         setInterns(data);
@@ -50,9 +61,12 @@ export default function SupervisorDashboard() {
     const fetchProjects = async () => {
       try {
         const token = localStorage.getItem("supervisorToken");
-        const res = await fetch(`http://localhost:5000/api/supervisor/projects/${supervisorId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch(
+           `http://localhost:5000/api/supervisor/projects/${supervisorId}/${cohortId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         const data = await res.json();
         if (!res.ok) throw new Error(data?.message);
         setProjects(data);
@@ -64,9 +78,10 @@ export default function SupervisorDashboard() {
   }, [supervisorId]);
 
   useEffect(() => {
-    const filtered = interns.filter((intern) =>
-      intern.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      intern.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    const filtered = interns.filter(
+      (intern) =>
+        intern.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        intern.email?.toLowerCase().includes(searchQuery.toLowerCase())
     );
     setFilteredInterns(filtered);
   }, [searchQuery, interns]);
@@ -89,7 +104,12 @@ export default function SupervisorDashboard() {
   };
 
   const handleCreateProject = async () => {
-    if (!newProject.name || !newProject.leader || !newProject.description || newProject.members.length === 0) {
+    if (
+      !newProject.name ||
+      !newProject.leader ||
+      !newProject.description ||
+      newProject.members.length === 0
+    ) {
       toast.error("Please fill in all fields and select at least one team member.");
       return;
     }
@@ -116,39 +136,57 @@ export default function SupervisorDashboard() {
     } catch (err) {
       toast.error("Failed to create project.",err);
     }
+       navigate(`/supervisorDashboard/${supervisorId}/${cohortId}`);
+         window.location.href = `/supervisorDashboard/${supervisorId}/${cohortId}`;
+  };
+
+  const handleProjectClick = (projectId) => {
+    navigate(`/supervisor/${supervisorId}/${cohortId}/project/${projectId}`);
   };
 
   return (
     <div className="min-h-screen bg-[#1a1a1a] text-white">
       {/* Header */}
-      <header className="bg-white text-black py-4 px-6 flex items-center justify-between rounded-b-3xl shadow-md">
-        <div className="flex items-center gap-4">
-          <img src={logo} alt="MiNT InTerns" className="h-10" />
-          <h1 className="text-3xl font-semibold text-black -ml-12">Welcome, {supervisorName}</h1>
-        </div>
-        <div className="flex gap-4">
-          <button
-            onClick={() => setActiveTab("interns")}
-            className={`px-4 py-2 rounded-2xl font-semibold transition ${
-              activeTab === "interns"
-                ? "bg-[#144145] text-white"
-                : "border border-[#144145] text-[#144145] hover:bg-[#144145] hover:text-white"
-            }`}
-          >
-            Interns
-          </button>
-          <button
-            onClick={() => setActiveTab("projects")}
-            className={`px-4 py-2 rounded-2xl font-semibold transition ${
-              activeTab === "projects"
-                ? "bg-[#144145] text-white"
-                : "border border-[#144145] text-[#144145] hover:bg-[#144145] hover:text-white"
-            }`}
-          >
-            Projects
-          </button>
-        </div>
-      </header>
+     <header className="bg-white text-black py-4 px-6 flex items-center justify-between rounded-b-3xl shadow-md">
+  {/* Left: Avatar */}
+  <div className="flex items-center gap-3">
+    <img
+      src={avatar}
+      alt="Avatar"
+      className="h-10 w-10 rounded-full object-cover"
+    />
+    <h1 className="text-xl sm:text-2xl font-semibold text-black">
+      Welcome, {supervisorName}
+    </h1>
+  </div>
+
+
+
+  <div className="flex gap-4">
+      <button
+      onClick={() => setActiveTab("interns")}
+      className={`px-4 py-2 rounded-2xl font-semibold transition ${
+        activeTab === "interns"
+          ? "bg-[#144145] text-white"
+          : "border border-[#144145] text-[#144145] hover:bg-[#144145] hover:text-white"
+      }`}
+    >
+      Interns
+    </button>
+    <button
+      onClick={() => setActiveTab("projects")}
+      className={`px-4 py-2 rounded-2xl font-semibold transition ${
+        activeTab === "projects"
+          ? "bg-[#144145] text-white"
+          : "border border-[#144145] text-[#144145] hover:bg-[#144145] hover:text-white"
+      }`}
+    >
+      Projects
+    </button>
+    <img src={logo} alt="MiNT InTerns Logo" className="h-10" />
+  </div>
+</header>
+
 
       {/* Tab Content */}
       <main className="p-6">
@@ -311,7 +349,7 @@ export default function SupervisorDashboard() {
                 {projects.length === 0 ? (
                   <div className="text-center">
                     <img src={placeholderImage} alt="No Projects" className="mx-auto w-40 opacity-60" />
-                    <p className="text-gray-400 mt-2">No projects to show</p>
+                    <p className="text-gray-400 mt-2">No projects to show for this Cohort</p>
                   </div>
                 ) : (
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
@@ -324,7 +362,13 @@ export default function SupervisorDashboard() {
                         <div key={project._id} className="bg-[#2a2a2a] p-4 rounded-lg shadow border border-gray-700">
                           <div className="flex justify-between">
                             <div>
-                              <h3 className="text-lg font-bold text-[#FFA645]">{project.name}</h3>
+                              <h3
+  className="text-lg font-bold text-[#FFA645] cursor-pointer hover:underline"
+  onClick={() => handleProjectClick(project._id)}
+>
+
+            {project.name}
+          </h3>
                               <p className="text-sm text-gray-300">{project.description}</p>
                               <p className="text-sm text-gray-400 mt-1">Leader: {project.leader?.name}</p>
                               <p className="text-sm text-gray-400">Members: {project.members.map((m) => m.name).join(", ")}</p>
@@ -336,12 +380,12 @@ export default function SupervisorDashboard() {
                           </div>
                           {total > 0 && (
                             <div className="mt-3">
-                              <p className="text-xs text-gray-400 mb-1">Progress: {percentage}%</p>
-                              <div className="w-full bg-gray-700 rounded-full h-3">
+                              
+                             
                                 <div
                                   className="bg-[#FFA645] h-3 rounded-full"
                                   style={{ width: `${percentage}%` }}
-                                ></div>
+                                >
                               </div>
                             </div>
                           )}
