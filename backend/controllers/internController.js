@@ -5,6 +5,7 @@ const Project = require("../models/Project");
 const Supervisor = require('../models/Supervisor');
 const mongoose = require('mongoose');
 const Milestone = require('../models/Milestone');
+const Task = require('../models/Task');
 
 
 exports.applyIntern = async (req, res) => {
@@ -37,6 +38,46 @@ exports.applyIntern = async (req, res) => {
   }
 };
 
+exports.updateInternProfile = async (req, res) => {
+  const internId = req.params.id;
+  const { email, password } = req.body;
+  const profilePicture = req.file ? req.file.path : undefined; // Assuming file upload middleware like multer
+
+  try {
+    const intern = await Intern.findById(internId);
+    if (!intern) {
+      return res.status(404).json({ message: 'Intern not found.' });
+    }
+
+    // Update email if provided and different
+    if (email && email !== intern.email) {
+      // Optional: you might want to check for uniqueness here
+      intern.email = email;
+    }
+
+    // Update password if provided (hash it)
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      intern.password = await bcrypt.hash(password, salt);
+    }
+
+    // Update profile picture if provided
+    if (profilePicture) {
+      intern.profilePicture = profilePicture;
+    }
+
+    await intern.save();
+
+    // Optionally omit password from response
+    const internObj = intern.toObject();
+    delete internObj.password;
+
+    res.json({ message: 'Profile updated successfully', intern: internObj });
+  } catch (error) {
+    console.error('Error updating intern profile:', error);
+    res.status(500).json({ error: 'Something went wrong' });
+  }
+};
 exports.loginIntern = async (req, res) => {
   const { email, password } = req.body;
 
@@ -90,37 +131,45 @@ exports.getInternById = async (req, res) => {
     res.status(500).json({ error: 'Something went wrong' });
   }
 };
+
+
 exports.getProjectsByInternId = async (req, res) => {
   const { internId } = req.params;
 
   try {
     // Validate the ID format
     if (!mongoose.Types.ObjectId.isValid(internId)) {
-      return res.status(400).json({ message: 'Invalid intern ID' });
+      return res.status(400).json({ message: "Invalid intern ID" });
     }
 
     // Find all projects where the intern is a leader or a team member
-   const projects = await Project.find({
-  $or: [
-    { leader: internId },
-    { members: internId }
-  ]
-})
-.populate('leader', 'name email')
-.populate('members', 'name email')
-.populate({
-  path: 'milestones',
-  populate: {
-    path: 'tasks.completedBy',
-    select: 'name email'
-  }
-});
+    const projects = await Project.find({
+      $or: [{ leader: internId }, { members: internId }],
+    })
+      .populate("leader", "name email")
+      .populate("members", "name email")
+      .lean(); // Use .lean() to modify plain objects later
 
-res.status(200).json(projects);
+    // Fetch milestones and their tasks for each project
+    for (let project of projects) {
+      const milestones = await Milestone.find({ project: project._id })
+        .lean();
 
+      for (let milestone of milestones) {
+        const tasks = await Task.find({ milestone: milestone._id })
+          .populate("completedBy", "name email")
+          .lean();
+
+        milestone.tasks = tasks;
+      }
+
+      project.milestones = milestones;
+    }
+
+    res.status(200).json(projects);
   } catch (error) {
-    console.error('Error fetching projects for intern:', error);
-    res.status(500).json({ error: 'Something went wrong' });
+    console.error("Error fetching projects for intern:", error);
+    res.status(500).json({ error: "Something went wrong" });
   }
 };
 
@@ -154,26 +203,35 @@ exports.addMilestone = async (req, res) => {
   }
 };
 exports.addSubTask = async (req, res) => {
-  const { milestoneId, taskName } = req.body;
+  const { milestoneId } = req.params;
+  const { taskName } = req.body;
 
   try {
-     const milestone = await Milestone.findById(milestoneId);
+    const milestone = await Milestone.findById(milestoneId).populate('project');
     if (!milestone) {
       return res.status(404).json({ message: 'Milestone not found' });
     }
 
-    milestone.tasks.push({ name: taskName });
-    milestone.status = calculateMilestoneStatus(milestone.tasks);
+    const newTask = new Task({
+      name: taskName,
+      milestone: milestone._id,
+      project: milestone.project._id,
+    });
 
-    await milestone.save();
-    res.status(201).json(milestone);
+    await newTask.save();
+
+    res.status(201).json({
+      message: 'Subtask added successfully',
+      task: newTask,
+    });
   } catch (error) {
     console.error('Error adding subtask:', error);
     res.status(500).json({ error: 'Something went wrong' });
   }
 };
 exports.editMilestone = async (req, res) => {
-  const { milestoneId, name } = req.body;
+  const { milestoneId } = req.params;
+  const { name } = req.body;
 
   try {
     const milestone = await Milestone.findById(milestoneId).populate('project', 'leader');
@@ -181,7 +239,6 @@ exports.editMilestone = async (req, res) => {
       return res.status(404).json({ message: 'Milestone not found.' });
     }
 
-    // Remove leader check – allow any intern to edit milestone
     if (name) {
       milestone.name = name;
       await milestone.save();
@@ -195,7 +252,8 @@ exports.editMilestone = async (req, res) => {
 };
 
 exports.deleteMilestone = async (req, res) => {
-  const { milestoneId } = req.body;
+ const { milestoneId } = req.params;
+
 
   try {
     const milestone = await Milestone.findById(milestoneId).populate('project', 'leader milestones');
@@ -218,40 +276,56 @@ exports.deleteMilestone = async (req, res) => {
 };
 
 exports.editSubTask = async (req, res) => {
-  const { milestoneId, taskIndex, taskName } = req.body;
+  const { milestoneId, taskId } = req.params;
+  const { name } = req.body; // ✅ must match Mongoose schema
 
   try {
-    const milestone = await Milestone.findById(milestoneId).populate('project');
+    const milestone = await Milestone.findById(milestoneId);
     if (!milestone) {
       return res.status(404).json({ message: 'Milestone not found.' });
     }
 
-    // Remove leader check – allow any intern to edit subtasks
-    milestone.tasks[taskIndex].name = taskName;
-    await milestone.save();
+    const task = await Task.findOneAndUpdate(
+      { _id: taskId, milestone: milestoneId },
+      { name },
+      { new: true, runValidators: true }
+    );
 
-    res.json(milestone);
+    if (!task) {
+      return res.status(404).json({ message: 'Subtask not found.' });
+    }
+
+    res.json({ message: 'Subtask updated.', task });
   } catch (error) {
     console.error('Error editing subtask:', error);
     res.status(500).json({ error: 'Something went wrong' });
   }
 };
 
+
 exports.deleteSubTask = async (req, res) => {
-  const { milestoneId, taskIndex } = req.body;
+  const { milestoneId, taskId } = req.params;
 
   try {
-    const milestone = await Milestone.findById(milestoneId).populate('project');
+    const milestone = await Milestone.findById(milestoneId);
     if (!milestone) {
       return res.status(404).json({ message: 'Milestone not found.' });
     }
 
-    // Remove leader check – allow any intern to delete subtasks
-    milestone.tasks.splice(taskIndex, 1);
-    milestone.status = calculateMilestoneStatus(milestone.tasks);
+    const task = await Task.findOne({ _id: taskId, milestone: milestoneId });
+    if (!task) {
+      return res.status(404).json({ message: 'Subtask not found.' });
+    }
+
+    await Task.findByIdAndDelete(taskId);
+
+    // Re-fetch tasks related to this milestone to recalculate status
+    const remainingTasks = await Task.find({ milestone: milestoneId });
+
+    milestone.status = calculateMilestoneStatus(remainingTasks);
     await milestone.save();
 
-    res.json(milestone);
+    res.json({ message: 'Subtask deleted.', milestone });
   } catch (error) {
     console.error('Error deleting subtask:', error);
     res.status(500).json({ error: 'Something went wrong' });
@@ -260,24 +334,34 @@ exports.deleteSubTask = async (req, res) => {
 
 exports.toggleSubTaskStatus = async (req, res) => {
   const { internId } = req.params;
-  const { milestoneId, taskIndex } = req.body;
+  const { milestoneId, taskId } = req.body;
 
   try {
-    const milestone = await Milestone.findById(milestoneId);
-    const subtask = milestone.tasks[taskIndex];
-
-    if (subtask.status === "completed") {
-      subtask.status = "ongoing";
-      subtask.completedBy = null;
-    } else {
-      subtask.status = "completed";
-      subtask.completedBy = internId;
+    const task = await Task.findOne({ _id: taskId, milestone: milestoneId });
+    if (!task) {
+      return res.status(404).json({ error: "Task not found" });
     }
 
-    milestone.status = calculateMilestoneStatus(milestone.tasks);
+    // Toggle status
+    if (task.status === "completed") {
+      task.status = "ongoing";
+      task.completedBy = null;
+    } else {
+      task.status = "completed";
+      task.completedBy = internId;
+    }
+
+    await task.save();
+
+    // Recalculate milestone status
+    const tasks = await Task.find({ milestone: milestoneId });
+    const completedTasks = tasks.filter(t => t.status === "completed");
+    const milestone = await Milestone.findById(milestoneId);
+
+    milestone.status = completedTasks.length === tasks.length ? "completed" : "ongoing";
     await milestone.save();
 
-    res.json(milestone);
+    res.status(200).json({ message: "Task status updated", task });
   } catch (error) {
     console.error("Error toggling subtask:", error);
     res.status(500).json({ error: "Something went wrong" });

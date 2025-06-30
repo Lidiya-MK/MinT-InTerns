@@ -16,6 +16,7 @@ const {
   editSubTask,
   deleteSubTask,
   toggleSubTaskStatus,
+  updateInternProfile
  
   
 } = require('../controllers/internController');
@@ -53,17 +54,26 @@ router.get('/:internId/projects', protect, getProjectsByInternId);
 // Milestone & Subtask Routes (from InternController)
 // ─────────────────────────────────────────────
 
-// Milestones
+
 router.post('/addms', protect, addMilestone);
-router.put('/:projectId/editms', protect, editMilestone);
-router.delete('/:projectId/deletems', protect, deleteMilestone);
-// router.patch(`/toggleStatus/:milestoneId`);
+router.patch('/:id/profile', protect, upload.single('profilePicture'), updateInternProfile);
 
 
-// Subtasks
-router.post('/addst', protect, addSubTask);
-router.put('/:milestoneId/editst', protect, editSubTask);
-router.delete('/:milestoneId/deletest', protect, deleteSubTask);
+router.post('/milestones/:milestoneId/tasks', protect, addSubTask);
+
+
+
+router.patch("/milestone/:milestoneId", protect, editMilestone);
+router.delete("/milestone/:milestoneId", protect, deleteMilestone);
+
+
+router.delete(
+  "/subtask/:milestoneId/:taskId",
+  protect,
+  deleteSubTask
+);
+router.patch("/milestone/:milestoneId/subtask/:taskId", protect, editSubTask);
+
 
 // Task status management
 router.patch(

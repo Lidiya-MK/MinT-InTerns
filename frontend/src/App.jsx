@@ -12,6 +12,7 @@ import AdminLogin from "./pages/AdminPages/adminLogin";
 
 // Intern Dashboard
 import InternDashboard from "./pages/InternPages/internDashboard";
+import InternProfilePage from "./pages/InternPages/internProfile";
 import SupervisorDashboard from "./pages/SupervisorPages/SupervisorDashboard";
 import CompanyChats from "./pages/InternPages/companyChat";
 
@@ -63,6 +64,8 @@ function App() {
         {/* Intern Dashboard */}
         <Route path="/internDashboard/:id" element={<InternDashboard />} />
          <Route path="/company-chats" element={<CompanyChats/>} />
+         <Route path="/interns/:id/profile" element={<InternProfilePage />} />
+
 
         {/* Admin Dashboard */}
         <Route path="/admin/cohorts" element={<Cohorts />} />
