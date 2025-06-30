@@ -4,6 +4,7 @@ const Administrator = require('../models/Administrator');
 const bcrypt = require('bcryptjs');
 const Cohort = require('../models/Cohort');
 const mongoose = require('mongoose');
+const { sendEmail } = require("../utils/mailer");
 
 exports.getPendingInterns = async (req, res) => {
   try {
@@ -139,46 +140,122 @@ exports.updateMaxAcceptedInterns = async (req, res) => {
 };
 
 
+
 exports.acceptIntern = async (req, res) => {
   try {
     const cohort = await Cohort.findOne();
     if (!cohort) {
-      return res.status(500).json({ message: 'Cohort not found. Please set max accepted interns first.' });
+      return res.status(500).json({ message: "Cohort not found. Please set max accepted interns first." });
     }
 
-    const currentAcceptedCount = await Intern.countDocuments({ status: 'accepted' });
+    const currentAcceptedCount = await Intern.countDocuments({ status: "accepted" });
     if (currentAcceptedCount >= cohort.maxInterns) {
-      return res.status(403).json({ message: 'Acceptance limit reached. Cannot accept more interns.' });
+      return res.status(403).json({ message: "Acceptance limit reached. Cannot accept more interns." });
     }
 
-    const intern = await Intern.findById(req.params.id);
-    if (!intern) return res.status(404).json({ message: 'Intern not found' });
+    const intern = await Intern.findById(req.params.id).populate("cohort");
+    if (!intern) return res.status(404).json({ message: "Intern not found" });
 
-    if (intern.status === 'accepted') {
-      return res.status(400).json({ message: 'Intern is already accepted' });
+    if (intern.status === "accepted") {
+      return res.status(400).json({ message: "Intern is already accepted" });
     }
 
-    intern.status = 'accepted';
+    // Generate 6-digit password and hash it
+    const plainPassword = Math.floor(100000 + Math.random() * 900000).toString(); // e.g. "123456"
+    const hashedPassword = await bcrypt.hash(plainPassword, 10);
+
+    // Update intern status and password
+    intern.status = "accepted";
+    intern.password = hashedPassword;
     await intern.save();
 
-    res.status(200).json({ message: 'Intern accepted' });
+    // ✅ Send congratulatory email
+    if (intern.email) {
+      const cohortName = intern.cohort?.name || "this cohort";
+      const subject = "MinT InTernship Application Update";
+      const text = `
+Hi ${intern.name},
+
+🎉 Congratulations! You've officially been accepted into the MinT-InTerns program for "${cohortName}".
+
+Please use the following temporary password to log into your account:
+🔐 Password: ${plainPassword}
+
+⚠️ This password is private. Please change it as soon as you log in.
+
+We're thrilled to have you join us and excited to see what you will build.
+
+Warm regards,  
+MinT-InTerns Team
+`;
+
+      const html = `
+        <h2>Dear ${intern.name},</h2>
+        <p>🎉 <strong>Congratulations!</strong> You've been officially accepted into the <strong>${cohortName}</strong> MinT Internship program.</p>
+        <p>Please use the following temporary password to log into your account:</p>
+        <p style="font-size: 1.2em;"><strong>🔐 Password:</strong> ${plainPassword}</p>
+        <p style="color: red;"><strong>⚠️ This password is private. Please change it as soon as you log in.</strong></p>
+        <p>We're <strong>thrilled to have you</strong> join us and <strong>excited to see what you will build</strong> during your internship.</p>
+        <br/>
+        <p>Warm regards,<br/>MinT-InTerns Team</p>
+      `;
+
+      await sendEmail({ to: intern.email, subject, text, html });
+    }
+
+    res.status(200).json({ message: "Intern accepted and credentials sent." });
   } catch (err) {
-    console.error('Accept Intern Error:', err);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Accept Intern Error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
 exports.rejectIntern = async (req, res) => {
   try {
-    const intern = await Intern.findById(req.params.id);
-    if (!intern) return res.status(404).json({ message: 'Intern not found' });
+    const intern = await Intern.findById(req.params.id).populate("cohort");
 
-    intern.status = 'rejected';
+    if (!intern) return res.status(404).json({ message: "Intern not found" });
+
+    intern.status = "rejected";
     await intern.save();
 
-    res.status(200).json({ message: 'Intern rejected' });
+    // ✅ Compose rejection email
+    if (intern.email) {
+      const cohortName = intern.cohort?.name || "the current cohort";
+      const subject = "MinT InTernship Application Update";
+      const text = `
+Dear ${intern.name},
+
+Thank you for your application to the MinT InTernship program.
+
+After careful consideration, we regret to inform you that you have not been accepted into ${cohortName}. There were many strong applicants, and the selection process was highly competitive.
+
+Please note: If the quota for this cohort changes, we will notify you promptly.
+
+We encourage you to stay engaged and consider applying again in the future.
+
+Warm regards,  
+MinT-InTerns Team
+`;
+
+      const html = `
+        <h2>Dear ${intern.name},</h2>
+        <p>Thank you for your application to the <strong>MinT-InTerns</strong> program.</p>
+        <p>After careful consideration, we regret to inform you that you have <strong>not been accepted</strong> into <b>${cohortName}</b>.</p>
+        <p>There were many strong applicants, and the selection process was highly competitive.</p>
+        <p style="color: #444;">If the quota for this cohort changes, we will notify you immediately.</p>
+        <br/>
+        <p>We truly appreciate your interest and encourage you to apply again in the future.</p>
+        <p style="margin-top: 20px;">Warm regards,<br/>MinT-InTerns Team</p>
+      `;
+
+      await sendEmail({ to: intern.email, subject, text, html });
+    }
+
+    res.status(200).json({ message: "Intern rejected and email sent." });
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    console.error("Reject Intern Error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
