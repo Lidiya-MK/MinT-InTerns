@@ -257,10 +257,6 @@ export default function SupervisorProjects() {
         ) : (
           <div className="space-y-6">
             {projects.map((project) => {
-              const total = project.milestones.length;
-              const completed = project.milestones.filter((m) => m.status === "complete").length;
-              const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-
               return (
                 <div key={project._id} className="bg-[#2a2a2a] p-6 rounded-2xl shadow-lg border border-gray-700">
                   {editingProjectId === project._id ? (
@@ -351,14 +347,7 @@ export default function SupervisorProjects() {
 
                       </div>
 
-                      {total > 0 && (
-                        <div className="mt-4">
-                          <div className="w-full bg-gray-600 h-3 rounded-full overflow-hidden">
-                            <div className="bg-[#FFA645] h-full" style={{ width: `${percentage}%` }}></div>
-                          </div>
-                          <p className="text-sm text-gray-400 mt-1">{percentage}% Milestones Completed</p>
-                        </div>
-                      )}
+                     
 
                       {deleteConfirmationId === project._id && (
                         <div className="mt-4 p-4 bg-red-500/20 border border-red-500 rounded-lg">

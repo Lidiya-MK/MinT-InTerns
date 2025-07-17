@@ -218,23 +218,24 @@ const Form = () => {
           </div>
         </div>
 
-        <div>
-          <Label.Root htmlFor="cgpa" className="block mb-2 font-medium">
-            CGPA (0 - 4)
-          </Label.Root>
-          <input
-            type="number"
-            name="cgpa"
-            id="cgpa"
-            step="0.01"
-            min="0"
-            max="4"
-            value={form.cgpa}
-            onChange={handleChange}
-            required
-            className="w-full p-3 rounded-lg border bg-zinc-100"
-          />
-        </div>
+     <div>
+  <Label.Root htmlFor="cgpa" className="block mb-2 font-medium">
+    CGPA (0 - 4)
+  </Label.Root>
+  <input
+    type="number"
+    name="cgpa"
+    id="cgpa"
+    step="0.01"
+    min="0"
+    max="4"
+    value={form.cgpa}
+    onChange={handleChange}
+    required
+    className="w-full p-3 rounded-lg border bg-zinc-100"
+  />
+</div>
+
 
         <div>
           <Label.Root htmlFor="cohort" className="block mb-2 font-medium">

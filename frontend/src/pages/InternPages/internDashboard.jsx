@@ -3,10 +3,10 @@ import { useParams, Link } from "react-router-dom";
 import axios from "axios";
 import logo from "../../assets/logo.png";
 import { toast } from "react-hot-toast";
-import { FiSend, FiEdit, FiTrash2, FiCheck, FiPlus, FiCheckCircle, FiX } from "react-icons/fi";
+import { FiLogOut, FiEdit, FiTrash2, FiCheck, FiPlus, FiCheckCircle, FiX } from "react-icons/fi";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
-
+import { useNavigate } from "react-router-dom";
 export default function InternDashboard() {
   const { id } = useParams();
   const [intern, setIntern] = useState(null);
@@ -20,7 +20,13 @@ export default function InternDashboard() {
   useEffect(() => {
     fetchInternData();
   }, [id]);
+const navigate = useNavigate();
 
+const handleLogout = () => {
+  localStorage.removeItem("internToken");
+  toast.success("Logged out successfully");
+  navigate("/intern-login");
+};
   const fetchInternData = async () => {
     try {
       const token = localStorage.getItem("internToken");
@@ -220,25 +226,41 @@ const handleCancelMilestoneEdit = () => {
 
   return (
     <div className="min-h-screen bg-white text-black p-4 md:p-6">
-      <header className="sticky top-0 z-50 flex flex-col md:flex-row md:items-center md:justify-between bg-white p-4 md:p-6 rounded-2xl shadow border border-gray-200 mb-4">
-        <div className="flex items-center gap-4 md:gap-6 mb-4 md:mb-0">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#144145] to-[#1D7F8C] blur-sm opacity-30 animate-pulse"></div>
-            <img
-              src={getImageUrl(intern?.profilePicture)}
-              alt="Profile"
-              className="relative h-12 w-12 md:h-16 md:w-16 rounded-full border-4 border-[#1D7F8C] shadow-md object-cover"
-            />
-          </div>
-          <div>
-            <h1 className="text-xl md:text-2xl font-extrabold text-gray-800">{intern?.name}</h1>
-            <p className="text-xs md:text-sm text-gray-500 mt-1">Welcome back! Here’s what’s happening today</p>
-          </div>
-        </div>
-        <div className="flex gap-4">
-          <img src={logo} alt="System Logo" className="h-10 w-auto" />
-        </div>
-      </header>
+     <header className="sticky top-0 z-50 flex flex-col md:flex-row md:items-center md:justify-between bg-white p-4 md:p-6 rounded-2xl shadow border border-gray-200 mb-4">
+  <div className="flex items-center gap-4 md:gap-6 mb-4 md:mb-0">
+    <div className="relative">
+      <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#144145] to-[#1D7F8C] blur-sm opacity-30 animate-pulse"></div>
+      <img
+        src={getImageUrl(intern?.profilePicture)}
+        alt="Profile"
+        className="relative h-12 w-12 md:h-16 md:w-16 rounded-full border-4 border-[#1D7F8C] shadow-md object-cover"
+      />
+    </div>
+    <div>
+      <h1 className="text-xl md:text-2xl font-extrabold text-gray-800">
+        {intern?.name}
+      </h1>
+      <p className="text-xs md:text-sm text-gray-500 mt-1">
+        Welcome back! Here’s what’s happening today
+      </p>
+    </div>
+  </div>
+
+  <div className="flex items-center gap-4">
+    
+    <button
+      onClick={handleLogout}
+      className="text-[#144145] hover:text-red-500 transition-colors duration-200"
+      title="Logout"
+  
+    >
+      <FiLogOut size={24} />
+    </button>
+    <img src={logo} alt="System Logo" className="h-10 w-auto" />
+
+   
+  </div>
+</header>
 
       <div className="flex justify-center gap-4 mb-4 border-b border-gray-300">
         <button
@@ -480,12 +502,21 @@ const handleCancelMilestoneEdit = () => {
           onChange={(e) => handleSubtaskInputChange(milestone._id, e.target.value)}
           className="flex-1 p-1 border rounded text-xs"
         />
-        <button
-          onClick={() => handleAddSubtask(milestone._id)}
-          className="bg-[#EA9753] hover:bg-[#d2782c] text-white rounded p-1"
-        >
-          <FiPlus />
-        </button>
+       <button
+  onClick={() => {
+    if (project.status !== "closed") handleAddSubtask(milestone._id);
+  }}
+  disabled={project.status === "closed"}
+  className={`rounded p-1 ${
+    project.status === "closed"
+      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+      : "bg-[#EA9753] hover:bg-[#d2782c] text-white"
+  }`}
+  title={project.status === "closed" ? "Project is closed" : "Add subtask"}
+>
+  <FiPlus />
+</button>
+
       </div>
     )}
   </div>
@@ -505,12 +536,21 @@ const handleCancelMilestoneEdit = () => {
                               onChange={(e) => handleMilestoneInputChange(project._id, e.target.value)}
                               className="flex-1 p-1 border rounded text-xs"
                             />
-                            <button
-                              onClick={() => handleAddMilestone(project._id)}
-                              className="bg-[#144145] hover:bg-[#0e2d30] text-white rounded p-1"
-                            >
-                              <FiPlus />
-                            </button>
+                         <button
+  onClick={() => {
+    if (project.status !== "closed") handleAddMilestone(project._id);
+  }}
+  disabled={project.status === "closed"}
+  className={`rounded p-1 ${
+    project.status === "closed"
+      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+      : "bg-[#144145] hover:bg-[#0e2d30] text-white"
+  }`}
+  title={project.status === "closed" ? "Project is closed" : "Add milestone"}
+>
+  <FiPlus />
+</button>
+
                           </div>
                         )}
                       </div>

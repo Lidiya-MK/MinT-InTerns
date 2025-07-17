@@ -3,6 +3,7 @@ const Supervisor = require('../models/Supervisor');
 const Project = require("../models/Project");
 const Cohort = require('../models/Cohort');
 const Intern= require('../models/Intern')
+const Task = require("../models/Task");
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Milestone = require("../models/Milestone"); 
@@ -186,22 +187,26 @@ exports.getProjectById = async (req, res) => {
 
 
 
-// Get milestone by ID
+
+
 exports.getMilestoneById = async (req, res) => {
   try {
     const { milestoneId } = req.params;
 
-    const milestone = await Milestone.findById(milestoneId)
-      .populate({
-        path: "tasks.completedBy",
-        select: "name email"
-      });
-
+    const milestone = await Milestone.findById(milestoneId);
     if (!milestone) {
       return res.status(404).json({ message: "Milestone not found." });
     }
 
-    res.status(200).json(milestone);
+    const tasks = await Task.find({ milestone: milestoneId })
+      .populate("completedBy", "name email");
+
+    const milestoneWithTasks = {
+      ...milestone.toObject(),
+      tasks,
+    };
+
+    res.status(200).json(milestoneWithTasks);
   } catch (error) {
     console.error("Error fetching milestone by ID:", error);
     res.status(500).json({ message: "Failed to fetch milestone." });
