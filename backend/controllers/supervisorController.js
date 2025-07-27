@@ -45,6 +45,62 @@ exports.loginSupervisor = async (req, res) => {
   }
 };
 
+// Get Supervisor by ID
+exports.getSupervisorById = async (req, res) => {
+  try {
+    const supervisor = await Supervisor.findById(req.params.supervisorId).select("-password"); // exclude password
+    if (!supervisor) {
+      return res.status(404).json({ message: "Supervisor not found" });
+    }
+
+    res.status(200).json(supervisor);
+  } catch (error) {
+    console.error("Error fetching supervisor:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+exports.updateSupervisorProfile = async (req, res) => {
+  const { name, email, password } = req.body;
+  const supervisorId = req.params.supervisorId;
+
+  try {
+    const supervisor = await Supervisor.findById(supervisorId);
+    if (!supervisor) return res.status(404).json({ message: "Supervisor not found" });
+
+    // Update name and email
+    if (name) supervisor.name = name;
+    if (email) supervisor.email = email;
+
+    // Update password if provided
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      supervisor.password = await bcrypt.hash(password, salt);
+    }
+
+    // Handle profile picture upload
+    if (req.file) {
+      supervisor.profilePicture = req.file.filename; // assuming filename is stored
+    }
+
+    await supervisor.save();
+
+    res.status(200).json({
+      message: "Profile updated successfully",
+      supervisor: {
+        id: supervisor._id,
+        name: supervisor.name,
+        email: supervisor.email,
+        profilePicture: supervisor.profilePicture
+      }
+    });
+  } catch (error) {
+    console.error("Error updating supervisor profile:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 
 exports.createProject = async (req, res) => {
   try {

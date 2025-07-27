@@ -1,18 +1,20 @@
-// Full Supervisor Projects Page
-// Includes: Full Width Layout + Full Edit Form (Name, Description, Leader, Members) + Create/Delete
-
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate,Link } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { FiEdit2, FiTrash2, FiCheck, FiX, FiSearch } from "react-icons/fi";
+import { FiEdit2, FiTrash2, FiCheck, FiX, FiSearch, FiLogOut } from "react-icons/fi";
 import logo from "../../assets/logo.png";
-import avatar from "../../assets/default-avatar.png";
+import defaultAvatar from "../../assets/default-avatar.png";
 import placeholderImage from "../../assets/placeholder.png";
 
 export default function SupervisorProjects() {
   const { supervisorId, cohortId } = useParams();
   const navigate = useNavigate();
 
+  // Supervisor state for header info
+  const [supervisor, setSupervisor] = useState(null);
+ 
+
+  // Projects & interns states, forms, etc.
   const [projects, setProjects] = useState([]);
   const [interns, setInterns] = useState([]);
   const [showProjectForm, setShowProjectForm] = useState(false);
@@ -23,6 +25,38 @@ export default function SupervisorProjects() {
   const [teamLeadSearchEdit, setTeamLeadSearchEdit] = useState("");
   const [deleteConfirmationId, setDeleteConfirmationId] = useState(null);
 
+  const getImageUrl = (path) => {
+   if (!path) return defaultAvatar;
+   const fixedPath = path.includes("uploads/")
+     ? path
+     : `/uploads/${path}`;
+   return `http://localhost:5000${fixedPath.replace(/\\/g, "/")}`;
+ };
+ 
+
+  // Fetch supervisor info for header
+  useEffect(() => {
+    const fetchSupervisor = async () => {
+      try {
+        const token = localStorage.getItem("supervisorToken");
+        const res = await fetch(`http://localhost:5000/api/supervisor/${supervisorId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.message);
+        setSupervisor(data);
+
+       
+      } catch (err) {
+        console.error("Failed to load supervisor:", err.message);
+        toast.error("Failed to load supervisor info.");
+      }
+    };
+
+    if (supervisorId) fetchSupervisor();
+  }, []);
+
+  // Fetch projects for this supervisor and cohort
   const fetchProjects = async () => {
     try {
       const token = localStorage.getItem("supervisorToken");
@@ -41,6 +75,7 @@ export default function SupervisorProjects() {
     fetchProjects();
   }, [supervisorId, cohortId]);
 
+  // Fetch interns for this cohort
   useEffect(() => {
     const fetchInterns = async () => {
       try {
@@ -148,34 +183,82 @@ export default function SupervisorProjects() {
     navigate(`/supervisor/${supervisorId}/${cohortId}/project/${projectId}`);
   };
 
-  const filteredTeamLeadOptions = interns.filter((intern) => intern.name?.toLowerCase().includes(teamLeadSearch.toLowerCase()));
-  const filteredTeamLeadOptionsEdit = interns.filter((intern) => intern.name?.toLowerCase().includes(teamLeadSearchEdit.toLowerCase()));
+  const filteredTeamLeadOptions = interns.filter((intern) =>
+    intern.name?.toLowerCase().includes(teamLeadSearch.toLowerCase())
+  );
+  const filteredTeamLeadOptionsEdit = interns.filter((intern) =>
+    intern.name?.toLowerCase().includes(teamLeadSearchEdit.toLowerCase())
+  );
+
+  const handleLogout = () => {
+    localStorage.removeItem("supervisorToken");
+    toast.success("Logged out successfully");
+    navigate("/supervisor-login");
+  };
 
   return (
     <div className="min-h-screen bg-[#1a1a1a] text-white">
       {/* Header */}
-      <header className="bg-white text-black py-4 px-6 flex items-center justify-between rounded-b-3xl shadow-md">
-        <div className="flex items-center gap-3">
-          <img src={avatar} alt="Avatar" className="h-10 w-10 rounded-full object-cover" />
-          <h1 className="text-xl sm:text-2xl font-semibold text-black">Welcome, Supervisor</h1>
-        </div>
+    <header className="bg-white text-black py-4 px-6 flex items-center justify-between rounded-b-3xl shadow-md">
+<div className="flex items-center gap-4">
+  <img
+    src={getImageUrl(supervisor?.profilePicture)}
+    alt="Supervisor"
+    className="h-12 w-12 rounded-full object-cover border border-gray-400 cursor-pointer"
+    onError={(e) => {
+      e.target.onerror = null;
+      e.target.src = defaultAvatar;
+    }}
+    onClick={() =>
+      navigate(`/updateProfile/${supervisorId}/${cohortId}`)
+    }
+    title="View/Edit Profile"
+  />
+  <div>
+    <p className="text-lg font-semibold">
+      {supervisor?.name || "Supervisor"}
+    </p>
+    <p className="text-sm text-gray-600">{supervisor?.email || ""}</p>
+  </div>
+</div>
 
-        <div className="flex gap-4">
-          <button
-            className="px-4 py-2 border border-[#144145] text-[#144145] rounded-2xl font-semibold hover:bg-[#144145] hover:text-white"
-            onClick={() => navigate(`/supervisorDashboard/${supervisorId}/${cohortId}`)}
-          >
-            Interns
-          </button>
-          <button
-            className="px-4 py-2 bg-[#144145] text-white rounded-2xl font-semibold"
-            onClick={() => navigate(`/supervisorProjects/${supervisorId}/${cohortId}`)}
-          >
-            Projects
-          </button>
-          <img src={logo} alt="MiNT InTerns Logo" className="h-10" />
-        </div>
-      </header>
+<div className="flex gap-4 items-center">
+  <button
+    className="px-3 py-1.5 border border-[#144145] text-[#144145] rounded-xl text-sm font-semibold"
+    onClick={() =>
+      navigate(`/supervisorDashboard/${supervisorId}/${cohortId}`)
+    }
+  >
+    Interns
+  </button>
+  <button
+    className="px-3 py-1.5 border bg-[#144145] text-white rounded-xl text-sm font-semibold hover:bg-[#144145] hover:text-white"
+    onClick={() =>
+      navigate(`/supervisorProjects/${supervisorId}/${cohortId}`)
+    }
+  >
+    Projects
+  </button>
+  <Link
+    to={`/supervisor/${supervisorId}/${cohortId}/profile-update`}
+    className="px-3 py-1.5 border border-[#144145] text-[#144145] rounded-xl text-sm font-semibold hover:bg-[#144145] hover:text-white"
+  >
+    Update Profile
+  </Link>
+
+  <div className="flex items-center gap-4">
+    <button
+      onClick={handleLogout}
+      className="text-[#144145] hover:text-red-500 transition-colors duration-200"
+      title="Logout"
+    >
+      <FiLogOut size={20} />
+    </button>
+    <img src={logo} alt="System Logo" className="h-10 w-auto" />
+  </div>
+</div>
+
+</header>
 
       <main className="p-6">
         <div className="flex justify-between items-center mb-6">

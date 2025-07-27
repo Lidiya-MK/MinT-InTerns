@@ -28,6 +28,8 @@ import AdministratorsList from "./components/adminComponents/AdministratorsList"
 //supervisor pags
 import SupervisorProjects from "./pages/SupervisorPages/SupervisorProjects";
 import SupervisorProjectDetails from "./pages/SupervisorPages/SupervisorProjectDetails";
+import SupervisorProfileUpdate from "./pages/SupervisorPages/SupervisorProfileUpdate"; 
+
 
 
 function App() {
@@ -55,11 +57,11 @@ function App() {
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/admin/supervisors" element={<SupervisorsList />} />
         <Route path="/admin/administrators" element={<AdministratorsList />} />
-        
-
+    
         <Route path="/supervisorDashboard/:supervisorId/:cohortId" element={<SupervisorDashboard />} />
         <Route path="/supervisorProjects/:supervisorId/:cohortId" element={<SupervisorProjects />} />
 
+    <Route  path="/supervisor/:supervisorId/:cohortId/profile-update" element={<SupervisorProfileUpdate />}/>
 
         {/* Intern Dashboard */}
         <Route path="/internDashboard/:id" element={<InternDashboard />} />

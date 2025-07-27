@@ -1,11 +1,11 @@
 const express = require('express');
+const upload = require('../middleware/upload');
 const router = express.Router();
 const { protect } = require('../middleware/supervisorAuthMiddleware');
 const { loginSupervisor,getInternsByCohort,createProject, getProjectsBySupervisor,
     getProjectById,getMilestoneById,
 toggleProjectStatus, updateAttendance,
-toggleProjectOutcome,updateProject, deleteProject
-
+toggleProjectOutcome,updateProject, deleteProject, getSupervisorById,updateSupervisorProfile
 } = require('../controllers/supervisorController');
 
 router.post('/login', loginSupervisor);
@@ -19,6 +19,8 @@ router.patch('/:projectId/toggle-outcome', protect, toggleProjectOutcome);
 router.put('/project/:projectId', protect, updateProject);       
 router.delete('/project/:projectId', protect, deleteProject);    
 router.put('/intern/:internId/attendance', protect, updateAttendance);
+router.get('/:supervisorId', protect, getSupervisorById); 
+router.put('/:supervisorId/update', protect, upload.single("profilePicture"), updateSupervisorProfile);
 
 
 module.exports = router;

@@ -1,28 +1,51 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
-import { FiCheck } from "react-icons/fi";
+import { FiCheck, FiLogOut } from "react-icons/fi";
 import "react-circular-progressbar/dist/styles.css";
 import logo from "../../assets/logo.png";
-import avatar from "../../assets/default-avatar.png";
+import defaultAvatar from "../../assets/default-avatar.png";
 
 export default function SupervisorProjectDetails() {
   const { supervisorId, projectId, cohortId } = useParams();
+  const navigate = useNavigate();
+
+  const [supervisor, setSupervisor] = useState(null);
   const [project, setProject] = useState(null);
   const [isClosed, setIsClosed] = useState(false);
   const [outcome, setOutcome] = useState(null);
 
   const token = localStorage.getItem("supervisorToken");
 
+ const getImageUrl = (path) => {
+  if (!path) return defaultAvatar;
+  const fixedPath = path.includes("uploads/")
+    ? path
+    : `/uploads/${path}`;
+  return `http://localhost:5000${fixedPath.replace(/\\/g, "/")}`;
+};
+
+
+  const fetchSupervisor = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/supervisor/${supervisorId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message);
+      setSupervisor(data);
+    } catch (err) {
+      console.error("Failed to load supervisor:", err.message);
+      toast.error("Failed to load supervisor info.");
+    }
+  };
+
   const fetchProjectDetails = async () => {
     try {
-      const res = await fetch(
-        `http://localhost:5000/api/supervisor/project/${projectId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await fetch(`http://localhost:5000/api/supervisor/project/${projectId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message);
 
@@ -47,10 +70,6 @@ export default function SupervisorProjectDetails() {
     }
   };
 
-  useEffect(() => {
-    if (projectId) fetchProjectDetails();
-  }, [projectId]);
-
   const handleToggleStatus = async () => {
     try {
       const res = await fetch(
@@ -62,12 +81,10 @@ export default function SupervisorProjectDetails() {
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message);
-
       toast.success("Project status updated.");
       await fetchProjectDetails();
     } catch (err) {
-      console.error(err);
-      toast.error("Failed to toggle project status.");
+      toast.error("Failed to toggle project status.",err);
     }
   };
 
@@ -82,14 +99,26 @@ export default function SupervisorProjectDetails() {
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message);
-
       toast.success("Project outcome updated.");
       await fetchProjectDetails();
     } catch (err) {
-      console.error(err);
-      toast.error("Failed to toggle project outcome.");
+      toast.error("Failed to toggle project outcome.",err);
     }
   };
+
+  const handleLogout = () => {
+    localStorage.removeItem("supervisorToken");
+    toast.success("Logged out successfully");
+    navigate("/supervisor-login");
+  };
+
+  useEffect(() => {
+    fetchSupervisor();
+  }, [supervisorId]);
+
+  useEffect(() => {
+    if (projectId) fetchProjectDetails();
+  }, [projectId]);
 
   if (!project) {
     return <p className="text-gray-400 p-4">Loading project details...</p>;
@@ -99,30 +128,75 @@ export default function SupervisorProjectDetails() {
   let completedSubtasks = 0;
   project.milestones?.forEach((m) => {
     totalSubtasks += m.tasks?.length || 0;
-    completedSubtasks +=
-      m.tasks?.filter((st) => st.status === "completed").length || 0;
+    completedSubtasks += m.tasks?.filter((st) => st.status === "completed").length || 0;
   });
-  const progress =
-    totalSubtasks === 0 ? 0 : (completedSubtasks / totalSubtasks) * 100;
+
+  const progress = totalSubtasks === 0 ? 0 : (completedSubtasks / totalSubtasks) * 100;
 
   return (
-    <div className="min-h-screen bg-white text-white">
-      <header className="bg-white text-black py-4 px-4 flex items-center justify-between rounded-b-3xl shadow-md">
-        <div className="flex items-center gap-3">
-          <img
-            src={avatar}
-            alt="Avatar"
-            className="h-10 w-10 rounded-full object-cover"
-          />
-          <h1 className="text-xl sm:text-2xl font-semibold text-black">
-            Welcome, Supervisor
-          </h1>
-        </div>
-        <div className="flex gap-4">
-          <img src={logo} alt="MiNT InTerns" className="h-10" />
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-white text-black">
+      {/* === Header: Copied from SupervisorDashboard === */}
+     <header className="bg-white text-black py-4 px-6 flex items-center justify-between rounded-b-3xl shadow-md">
+     <div className="flex items-center gap-4">
+       <img
+         src={getImageUrl(supervisor?.profilePicture)}
+         alt="Supervisor"
+         className="h-12 w-12 rounded-full object-cover border border-gray-400 cursor-pointer"
+         onError={(e) => {
+           e.target.onerror = null;
+           e.target.src = defaultAvatar;
+         }}
+         onClick={() =>
+           navigate(`/updateProfile/${supervisorId}/${cohortId}`)
+         }
+         title="View/Edit Profile"
+       />
+       <div>
+         <p className="text-lg font-semibold">
+           {supervisor?.name || "Supervisor"}
+         </p>
+         <p className="text-sm text-gray-600">{supervisor?.email || ""}</p>
+       </div>
+     </div>
+     
+     <div className="flex gap-4 items-center">
+      <button
+    className="px-3 py-1.5 border border-[#144145] text-[#144145] rounded-xl text-sm font-semibold"
+    onClick={() =>
+      navigate(`/supervisorDashboard/${supervisorId}/${cohortId}`)
+    }
+  >
+    Interns
+  </button>
+  <button
+    className="px-3 py-1.5 border bg-[#144145] text-white rounded-xl text-sm font-semibold hover:bg-[#144145] hover:text-white"
+    onClick={() =>
+      navigate(`/supervisorProjects/${supervisorId}/${cohortId}`)
+    }
+  >
+    Projects
+  </button>
+       <Link
+         to={`/supervisor/${supervisorId}/${cohortId}/profile-update`}
+         className="px-3 py-1.5 border border-[#144145] text-[#144145] rounded-xl text-sm font-semibold hover:bg-[#144145] hover:text-white"
+       >
+         Update Profile
+       </Link>
+     
+       <div className="flex items-center gap-4">
+         <button
+           onClick={handleLogout}
+           className="text-[#144145] hover:text-red-500 transition-colors duration-200"
+           title="Logout"
+         >
+           <FiLogOut size={20} />
+         </button>
+         <img src={logo} alt="System Logo" className="h-10 w-auto" />
+       </div>
+     </div>
+     
+     </header>
+      {/* === Main Content === */}
       <main className="mt-6 p-6">
         <Link
           to={`/supervisorDashboard/${supervisorId}/${cohortId}`}
@@ -134,9 +208,7 @@ export default function SupervisorProjectDetails() {
         <div className="flex flex-col md:flex-row gap-6 mt-4">
           <div className="flex-1 bg-white text-black p-4 md:p-6 rounded-xl border border-gray-300 shadow">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl md:text-3xl font-bold text-[#144145]">
-                {project.name}
-              </h2>
+              <h2 className="text-xl md:text-3xl font-bold text-[#144145]">{project.name}</h2>
               <div className="w-20 h-20">
                 <CircularProgressbar
                   value={progress}
@@ -170,9 +242,7 @@ export default function SupervisorProjectDetails() {
                   {project.members.map((member) => (
                     <li key={member._id}>
                       {member.name}{" "}
-                      <span className="text-gray-500 text-xs">
-                        ({member.email})
-                      </span>
+                      <span className="text-gray-500 text-xs">({member.email})</span>
                     </li>
                   ))}
                 </ul>
@@ -258,35 +328,33 @@ export default function SupervisorProjectDetails() {
             </div>
 
             {isClosed && (
-             <div className="mt-4 flex flex-col gap-2">
-  <button
-    onClick={handleToggleOutcome}
-    className={`flex-1 py-2 rounded-full font-semibold text-sm transition-colors duration-300 ${
-      outcome === "successful"
-        ? "bg-green-600 text-white"
-        : "bg-green-200 text-green-800"
-    }`}
-  >
-    {outcome === "successful" ? "Mark as Failed" : "Mark as Successful"}
-  </button>
+              <div className="mt-4 flex flex-col gap-2">
+                <button
+                  onClick={handleToggleOutcome}
+                  className={`flex-1 py-2 rounded-full font-semibold text-sm transition-colors duration-300 ${
+                    outcome === "successful"
+                      ? "bg-green-600 text-white"
+                      : "bg-green-200 text-green-800"
+                  }`}
+                >
+                  {outcome === "successful" ? "Mark as Failed" : "Mark as Successful"}
+                </button>
 
-  {/* Display project outcome status */}
-  <p className="text-sm text-gray-700 text-center">
-    Current Outcome:{" "}
-    <span
-      className={`font-semibold ${
-        outcome === "successful"
-          ? "text-green-600"
-          : outcome === "failed"
-          ? "text-red-600"
-          : "text-yellow-600"
-      }`}
-    >
-      {outcome}
-    </span>
-  </p>
-</div>
-
+                <p className="text-sm text-gray-700 text-center">
+                  Current Outcome:{" "}
+                  <span
+                    className={`font-semibold ${
+                      outcome === "successful"
+                        ? "text-green-600"
+                        : outcome === "failed"
+                        ? "text-red-600"
+                        : "text-yellow-600"
+                    }`}
+                  >
+                    {outcome}
+                  </span>
+                </p>
+              </div>
             )}
           </div>
         </div>
