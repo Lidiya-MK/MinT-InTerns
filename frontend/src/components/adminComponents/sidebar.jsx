@@ -1,13 +1,14 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Home,
   UserCheck,
   UserCog,
   UserPlus,
   Settings,
-  BarChart3,
+  LogOut,
 } from "lucide-react";
 import logo from "../../assets/logo.png";
+import { toast } from "react-hot-toast";
 
 const navItems = [
   { icon: <Home className="h-5 w-5" />, label: "Dashboard", path: "/admin/cohorts" },
@@ -20,6 +21,14 @@ const navItems = [
 ];
 
 export default function Sidebar() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("adminToken");
+    toast.success("Logged out successfully");
+    navigate("/admin-login");
+  };
+
   return (
     <aside className="w-64 bg-white text-gray-800 shadow-md min-h-screen p-5 flex flex-col">
       {/* Logo */}
@@ -28,7 +37,7 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation Links */}
-      <nav className="space-y-4">
+      <nav className="space-y-4 flex-1">
         {navItems.map((item) => (
           <Link
             to={item.path}
@@ -40,6 +49,15 @@ export default function Sidebar() {
           </Link>
         ))}
       </nav>
+
+      {/* Logout Button */}
+      <button
+        onClick={handleLogout}
+        className="flex items-center space-x-3 text-left hover:text-[#D25B24] transition-colors mt-6"
+      >
+        <LogOut className="h-5 w-5" />
+        <span className="text-sm font-medium">Logout</span>
+      </button>
     </aside>
   );
 }

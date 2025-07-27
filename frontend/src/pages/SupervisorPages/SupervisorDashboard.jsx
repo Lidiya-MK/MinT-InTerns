@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FiSearch } from "react-icons/fi";
+import { FiSearch,FiLogOut } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import defaultAvatar from "../../assets/default-avatar.png";
 import logo from "../../assets/logo.png";
@@ -117,6 +117,11 @@ export default function SupervisorDashboard() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("internToken");
+    toast.success("Logged out successfully");
+    navigate("/supervisor-login");
+  };
   return (
     <div className="min-h-screen bg-[#1a1a1a] text-white">
       {/* Header */}
@@ -139,7 +144,20 @@ export default function SupervisorDashboard() {
           >
             Projects
           </button>
-          <img src={logo} alt="MiNT InTerns Logo" className="h-10" />
+        <div className="flex items-center gap-4">
+            
+            <button
+              onClick={handleLogout}
+              className="text-[#144145] hover:text-red-500 transition-colors duration-200"
+              title="Logout"
+          
+            >
+              <FiLogOut size={24} />
+            </button>
+            <img src={logo} alt="System Logo" className="h-10 w-auto" />
+        
+           
+          </div>
         </div>
       </header>
 

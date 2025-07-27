@@ -1,4 +1,5 @@
 const express = require('express');
+const upload = require('../middleware/upload');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const { getPendingInterns,createSupervisor,getInternById,acceptIntern,
@@ -9,7 +10,13 @@ const{getOngoingCohorts, getPastCohorts}= require('../controllers/cohortControll
 
 router.get('/interns/pending', protect, getPendingInterns);
 router.get('/interns/accepted', protect, getAcceptedInterns);
-router.post('/register/supervisor', protect, createSupervisor);
+router.post(
+  '/register/supervisor',
+  protect,
+  upload.single('profilePicture'),
+  createSupervisor
+);
+
 router.get('/interns/:id', protect, getInternById);
 router.patch('/interns/:id/accept', protect, acceptIntern);
 router.patch('/interns/:id/reject', protect, rejectIntern);

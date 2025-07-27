@@ -1,7 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
-import Sidebar from "../adminComponents/Sidebar"; // Adjust path if needed
+import Sidebar from "../adminComponents/Sidebar";
 
 export default function Registration({ view }) {
   const [formData, setFormData] = useState({
@@ -10,6 +10,7 @@ export default function Registration({ view }) {
     password: "",
     confirmPassword: "",
   });
+  const [profilePicture, setProfilePicture] = useState(null);
 
   const token = localStorage.getItem("token");
 
@@ -25,21 +26,21 @@ export default function Registration({ view }) {
         ? "http://localhost:5000/api/admin/register"
         : "http://localhost:5000/api/admin/register/supervisor";
 
+    const payload = new FormData();
+    payload.append("name", formData.name);
+    payload.append("email", formData.email);
+    payload.append("password", formData.password);
+    if (profilePicture) payload.append("profilePicture", profilePicture);
+
     try {
-      const { data } = await axios.post(
-        endpoint,
-        {
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
+      const { data } = await axios.post(endpoint, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      console.log(`${data}`)
+      });
+
+      console.log("Registration response:", data);
 
       toast.success("Registration successful!");
       setFormData({
@@ -48,6 +49,7 @@ export default function Registration({ view }) {
         password: "",
         confirmPassword: "",
       });
+      setProfilePicture(null);
     } catch (error) {
       const msg = error?.response?.data?.message || "Something went wrong!";
       toast.error(msg);
@@ -56,10 +58,7 @@ export default function Registration({ view }) {
 
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar Component */}
       <Sidebar />
-
-      {/* Right side main content */}
       <main className="flex-1 flex justify-center items-center bg-[#272a2b] p-6">
         <section className="w-full max-w-lg bg-white p-6 rounded shadow">
           <h3 className="text-xl font-semibold mb-4">
@@ -111,6 +110,12 @@ export default function Registration({ view }) {
               }
               className="w-full border border-gray-300 p-2 rounded"
               required
+            />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setProfilePicture(e.target.files[0])}
+              className="w-full border border-gray-300 p-2 rounded"
             />
             <button
               type="submit"

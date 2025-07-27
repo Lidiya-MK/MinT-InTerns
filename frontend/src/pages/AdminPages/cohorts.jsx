@@ -19,7 +19,7 @@ function Cohorts() {
   const [pendingCount, setPendingCount] = useState(0);
   const [freeSlots, setFreeSlots] = useState(0);
 
-  const [view, setView] = useState("cohorts"); // 'cohorts', 'register-admin', 'register-supervisor', 'settings'
+  const [view, setView] = useState("cohorts");  
   const [formData, setFormData] = useState({
     name: "",
     email: "",

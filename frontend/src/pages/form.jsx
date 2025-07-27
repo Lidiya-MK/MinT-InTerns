@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react"
 import * as Label from "@radix-ui/react-label"
 import toast from "react-hot-toast"
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react"; 
+
 import {
   Mail,
   User,
@@ -144,15 +147,23 @@ const Form = () => {
       toast.error("Failed to submit application.")
     }
   }
-
+const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-[#144145] flex flex-col items-center py-10 px-4">
-      <header className="flex items-center space-x-4 p-4 mb-10 bg-white rounded-2xl shadow-md">
-        
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#144145]">
-          Internship Application Form
-        </h1>
-      </header>
+       {/* Back Button */}
+    <button
+      onClick={() => navigate("/landing")}
+      className="absolute top-6 left-6 text-white hover:text-[#D25B24] flex items-center space-x-2 z-50"
+    >
+      <ArrowLeft className="h-7 w-7" />
+    </button>
+
+    {/* Header */}
+    <header className="flex items-center justify-between p-4 mb-10 bg-white rounded-2xl shadow-md">
+      <h1 className="text-2xl sm:text-3xl font-bold text-[#144145]">
+        Internship Application Form
+      </h1>
+    </header>
 
       <form
         onSubmit={handleSubmit}

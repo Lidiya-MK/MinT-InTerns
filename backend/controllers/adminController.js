@@ -6,6 +6,8 @@ const Cohort = require('../models/Cohort');
 const mongoose = require('mongoose');
 const { sendEmail } = require("../utils/mailer");
 
+
+
 exports.getPendingInterns = async (req, res) => {
   try {
     const pendingInterns = await Intern.find({ status: { $in: ['pending', 'rejected'] } })
@@ -89,17 +91,21 @@ exports.createSupervisor = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
     const supervisor = await Supervisor.create({
       name,
       email,
       password: hashedPassword,
+      profilePicture: req.file ? `/uploads/${req.file.filename}` : undefined,
     });
 
     res.status(201).json({ message: 'Supervisor created successfully', supervisor });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 };
+
 
 exports.getInternById = async (req, res) => {
   try {
