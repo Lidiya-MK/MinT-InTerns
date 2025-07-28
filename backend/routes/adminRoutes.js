@@ -5,8 +5,8 @@ const { protect } = require('../middleware/authMiddleware');
 const { getPendingInterns,createSupervisor,getInternById,acceptIntern,
      rejectIntern, getAcceptedInterns,updateMaxAcceptedInterns, getCohorts, 
      createCohort, deleteCohort,getMaxInterns,getAvailableSlots, getInternsByCohort,getAcceptedInternsByCohort,getPendingOrRejectedInternsByCohort,
-     getPendingInternCountByCohort, getAcceptedInternCountByCohort, getAllSupervisors, getAllAdmins } = require('../controllers/adminController');
-const{getOngoingCohorts, getPastCohorts}= require('../controllers/cohortController')
+     getPendingInternCountByCohort, getAcceptedInternCountByCohort, getAllSupervisors, getAllAdmins,updateCohort } = require('../controllers/adminController');
+const{getOngoingCohorts, getPastCohorts }= require('../controllers/cohortController')
 
 router.get('/interns/pending', protect, getPendingInterns);
 router.get('/interns/accepted', protect, getAcceptedInterns);
@@ -35,6 +35,8 @@ router.get('/cohort/:cohortId/accepted-count', protect, getAcceptedInternCountBy
 router.get('/cohort/:cohortId/pending-count', protect, getPendingInternCountByCohort);
 router.get('/supervisors', protect, getAllSupervisors);
 router.get('/administrators', protect, getAllAdmins);
+router.patch('/cohorts/:id', protect, updateCohort);
+
 
 
 module.exports = router;

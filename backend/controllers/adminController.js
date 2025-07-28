@@ -25,6 +25,42 @@ exports.getPendingInterns = async (req, res) => {
   
 };
 
+exports.updateCohort = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    // Optional: Validate specific fields if they exist
+    if (
+      updateData.applicationStart &&
+      updateData.applicationEnd &&
+      new Date(updateData.applicationEnd) < new Date(updateData.applicationStart)
+    ) {
+      return res.status(400).json({ message: 'Application end must be after start date' });
+    }
+
+    if (
+      updateData.cohortStart &&
+      updateData.cohortEnd &&
+      new Date(updateData.cohortEnd) <= new Date(updateData.cohortStart)
+    ) {
+      return res.status(400).json({ message: 'Cohort end must be after start date' });
+    }
+
+    const cohort = await Cohort.findByIdAndUpdate(id, updateData, { new: true });
+
+    if (!cohort) {
+      return res.status(404).json({ message: 'Cohort not found' });
+    }
+
+    res.status(200).json({ message: 'Cohort updated', cohort });
+  } catch (err) {
+    console.error("Error updating cohort:", err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
 exports.getAcceptedInterns = async (req, res) => {
   try {
     const pendingInterns = await Intern.find({ status: 'accepted' });
