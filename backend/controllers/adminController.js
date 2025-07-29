@@ -3,8 +3,101 @@ const Supervisor = require('../models/Supervisor');
 const Administrator = require('../models/Administrator');
 const bcrypt = require('bcryptjs');
 const Cohort = require('../models/Cohort');
+const Project = require('../models/Project');
+const Task = require('../models/Task');
+
 const mongoose = require('mongoose');
 const { sendEmail } = require("../utils/mailer");
+
+
+// Get a single cohort by ID
+exports.getCohortById = async (req, res) => {
+  try {
+    const { cohortId } = req.params;
+    const cohort = await Cohort.findById(cohortId).lean();
+
+    if (!cohort) {
+      return res.status(404).json({ message: 'Cohort not found' });
+    }
+
+    res.status(200).json(cohort);
+  } catch (err) {
+    console.error("Error fetching cohort:", err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Get all projects for a specific cohort
+exports.getProjectsByCohort = async (req, res) => {
+  try {
+    const { cohortId } = req.params;
+
+    // Fetch projects with populated leader, supervisor, and members
+    const projects = await Project.find({ cohort: cohortId })
+      .populate({ path: 'leader', select: 'name profilePicture' })
+      .populate({ path: 'supervisor', select: 'name profilePicture' })
+      .populate({ path: 'members', select: 'name profilePicture' })
+      .lean();
+
+    // Get task progress for each project
+    const projectIds = projects.map(p => p._id);
+    const taskStats = await Task.aggregate([
+      { $match: { project: { $in: projectIds } } },
+      {
+        $group: {
+          _id: '$project',
+          total: { $sum: 1 },
+          completed: {
+            $sum: {
+              $cond: [{ $eq: ['$status', 'completed'] }, 1, 0]
+            }
+          }
+        }
+      }
+    ]);
+
+    // Build a map for quick lookup
+    const progressMap = taskStats.reduce((acc, stat) => {
+      acc[stat._id.toString()] = stat.total
+        ? Math.round((stat.completed / stat.total) * 100)
+        : 0;
+      return acc;
+    }, {});
+
+    // Add progress to each project
+    const projectsWithProgress = projects.map(project => ({
+      ...project,
+      progress: progressMap[project._id.toString()] || 0
+    }));
+
+    res.status(200).json(projectsWithProgress);
+  } catch (err) {
+    console.error("Error fetching projects by cohort:", err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
+exports.getAcceptedInternsByCohort = async (req, res) => {
+  try {
+    const { cohortId } = req.params;
+
+    const interns = await Intern.find({
+      cohort: cohortId,
+      status: 'accepted'
+    }).populate('cohort', 'name');
+
+    if (interns.length === 0) {
+      return res.status(200).json({ message: 'No accepted interns found for this cohort' });
+    }
+
+    res.status(200).json(interns);
+  } catch (error) {
+    console.error('Error fetching accepted interns by cohort:', error);
+    res.status(500).json({ error: 'Failed to fetch accepted interns for this cohort' });
+  }
+};
+
 
 
 
@@ -401,26 +494,6 @@ exports.getPendingOrRejectedInternsByCohort = async (req, res) => {
   } catch (error) {
     console.error('Error fetching pending/rejected interns by cohort:', error);
     res.status(500).json({ error: 'Failed to fetch pending/rejected interns for this cohort' });
-  }
-};
-
-exports.getAcceptedInternsByCohort = async (req, res) => {
-  try {
-    const { cohortId } = req.params;
-
-    const interns = await Intern.find({
-      cohort: cohortId,
-      status: 'accepted'
-    }).populate('cohort', 'name');
-
-    if (interns.length === 0) {
-      return res.status(200).json({ message: 'No accepted interns found for this cohort' });
-    }
-
-    res.status(200).json(interns);
-  } catch (error) {
-    console.error('Error fetching accepted interns by cohort:', error);
-    res.status(500).json({ error: 'Failed to fetch accepted interns for this cohort' });
   }
 };
 

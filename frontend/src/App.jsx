@@ -30,6 +30,7 @@ import SupervisorProjects from "./pages/SupervisorPages/SupervisorProjects";
 import SupervisorProjectDetails from "./pages/SupervisorPages/SupervisorProjectDetails";
 import SupervisorProfileUpdate from "./pages/SupervisorPages/SupervisorProfileUpdate"; 
 
+import AdminCohortReports from "./pages/AdminPages/AdminCohortReports"; // adjust path if needed
 
 
 function App() {
@@ -57,7 +58,9 @@ function App() {
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/admin/supervisors" element={<SupervisorsList />} />
         <Route path="/admin/administrators" element={<AdministratorsList />} />
-    
+    <Route path="/admin/cohort/:cohortId/reports" element={<AdminCohortReports />} />
+
+
         <Route path="/supervisorDashboard/:supervisorId/:cohortId" element={<SupervisorDashboard />} />
         <Route path="/supervisorProjects/:supervisorId/:cohortId" element={<SupervisorProjects />} />
 

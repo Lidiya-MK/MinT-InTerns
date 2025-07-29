@@ -19,7 +19,7 @@ function Cohorts() {
   const [pendingCount, setPendingCount] = useState(0);
   const [freeSlots, setFreeSlots] = useState(0);
 
-  const [view, setView] = useState("cohorts");  
+  const [view, setView] = useState("cohorts");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -153,15 +153,27 @@ function Cohorts() {
       </p>
       <p className="text-sm text-gray-300">Capacity: {cohort.maxInterns}</p>
 
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          navigate(`/admin/cohort/${cohort._id}/accepted`);
-        }}
-        className="mt-4 w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold py-2 px-4 rounded shadow-md transition"
-      >
-        → View Accepted Interns
-      </button>
+      <div className="grid grid-cols-1 gap-2 mt-4">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/admin/cohort/${cohort._id}/accepted`);
+          }}
+          className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold py-2 px-4 rounded shadow-md transition"
+        >
+          → View Accepted Interns
+        </button>
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/admin/cohort/${cohort._id}/reports`);
+          }}
+          className="w-full bg-gradient-to-r from-orange-600 to-orange-800 hover:from-orange-700 hover:to-orange-600 text-white font-semibold py-2 px-4 rounded shadow-md transition"
+        >
+          📊 See Reports
+        </button>
+      </div>
     </div>
   );
 
