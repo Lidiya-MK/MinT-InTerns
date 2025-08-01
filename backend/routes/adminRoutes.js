@@ -40,6 +40,7 @@ router.get('/cohort/:cohortId', protect, getCohortById);
 router.get('/cohort/:cohortId/projects', protect, getProjectsByCohort);
 router.get('/cohort/:cohortId/interns/accepted', protect, getAcceptedInternsByCohort);
 router.patch('/supervisors/:supervisorId/password', protect, updateSupervisorPassword);
+router.delete('/interns/:internId', protect, deleteInternCompletely);
 
 
 module.exports = router;

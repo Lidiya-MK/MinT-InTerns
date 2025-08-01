@@ -79,6 +79,44 @@ exports.getProjectsByCohort = async (req, res) => {
 
 
 
+
+// Delete an intern and remove all references
+exports.deleteInternCompletely = async (req, res) => {
+  try {
+    const { internId } = req.params;
+
+    const intern = await Intern.findById(internId);
+    if (!intern) {
+      return res.status(404).json({ message: 'Intern not found' });
+    }
+
+    const internObjectId = intern._id;
+
+    // Remove intern from projects (as leader or member)
+    await Project.updateMany(
+      { leader: internObjectId },
+      { $unset: { leader: "" } }
+    );
+
+    await Project.updateMany(
+      { members: internObjectId },
+      { $pull: { members: internObjectId } }
+    );
+
+    // Optionally: Remove tasks or logs owned by intern (if you track that)
+    // await Task.deleteMany({ createdBy: internObjectId });
+
+    // Finally, delete the intern
+    await Intern.findByIdAndDelete(internObjectId);
+
+    res.status(200).json({ message: 'Intern and all related references deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting intern completely:', error);
+    res.status(500).json({ message: 'Server error while deleting intern.' });
+  }
+};
+
+
 // Update supervisor password (admin only)
 exports.updateSupervisorPassword = async (req, res) => {
   try {
