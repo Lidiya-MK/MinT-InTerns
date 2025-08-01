@@ -61,6 +61,33 @@ exports.getSupervisorById = async (req, res) => {
 };
 
 
+
+exports.changeInternPassword = async (req, res) => {
+  const { internId } = req.params;
+  const { newPassword } = req.body;
+
+  if (!newPassword || newPassword.length < 6) {
+    return res.status(400).json({ message: "Password must be at least 6 characters long" });
+  }
+
+  try {
+    const intern = await Intern.findById(internId);
+    if (!intern) {
+      return res.status(404).json({ message: "Intern not found" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    intern.password = await bcrypt.hash(newPassword, salt);
+    await intern.save();
+
+    res.status(200).json({ message: "Intern password updated successfully" });
+  } catch (error) {
+    console.error("Error changing intern password:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
 exports.updateSupervisorProfile = async (req, res) => {
   const { name, email, password } = req.body;
   const supervisorId = req.params.supervisorId;
