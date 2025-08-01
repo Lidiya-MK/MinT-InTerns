@@ -152,7 +152,7 @@ const navigate = useNavigate();
     <div className="min-h-screen bg-[#144145] flex flex-col items-center py-10 px-4">
        {/* Back Button */}
     <button
-      onClick={() => navigate("/landing")}
+      onClick={() => navigate("/")}
       className="absolute top-6 left-6 text-white hover:text-[#D25B24] flex items-center space-x-2 z-50"
     >
       <ArrowLeft className="h-7 w-7" />

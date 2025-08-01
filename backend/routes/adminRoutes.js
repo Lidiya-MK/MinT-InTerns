@@ -6,7 +6,7 @@ const { getPendingInterns,createSupervisor,getInternById,acceptIntern,
      rejectIntern, getAcceptedInterns,updateMaxAcceptedInterns, getCohorts, 
      createCohort, deleteCohort,getMaxInterns,getAvailableSlots, getInternsByCohort,getAcceptedInternsByCohort,getPendingOrRejectedInternsByCohort,
      getPendingInternCountByCohort, getAcceptedInternCountByCohort, getAllSupervisors, getAllAdmins,updateCohort, getCohortById,
-  getProjectsByCohort,updateSupervisorPassword } = require('../controllers/adminController');
+  getProjectsByCohort,updateSupervisorPassword,deleteInternCompletely } = require('../controllers/adminController');
 const{getOngoingCohorts, getPastCohorts }= require('../controllers/cohortController')
 
 router.get('/interns/pending', protect, getPendingInterns);

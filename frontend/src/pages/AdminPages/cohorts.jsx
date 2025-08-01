@@ -142,7 +142,7 @@ function Cohorts() {
         setSelectedCohort(cohort);
         setView("cohorts");
       }}
-      className="relative bg-gradient-to-b from-gray-800 to-gray-900 text-white p-6 rounded-xl shadow-lg cursor-pointer hover:scale-[1.015] transition-transform duration-300 ease-in-out"
+      className="relative bg-gradient-to-b from-gray-800 to-gray-900 text-white p-6 rounded-xl shadow-lg cursor-pointer hover:scale-[1.015] transition-transform duration-300 ease-in-out hover:border hover:border-green-300"
     >
       <h3 className="text-xl font-bold">{cohort.name}</h3>
       <p className="text-sm text-gray-400">
@@ -161,7 +161,7 @@ function Cohorts() {
           }}
           className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 rounded-lg transition"
         >
-          ✅ View Accepted Interns
+          View Accepted Interns
         </button>
 
         <button

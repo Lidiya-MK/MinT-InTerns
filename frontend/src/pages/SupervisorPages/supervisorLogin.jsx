@@ -5,6 +5,7 @@ import { Label } from "@radix-ui/react-label";
 import { Button } from "../../components/GeneralComponents/button";
 import logo from "../../assets/logo.png";
 import axios from "axios";
+import { FiArrowLeft } from "react-icons/fi"; 
 import { Link, useNavigate } from "react-router-dom";
 
 const SupervisorLogin = () => {
@@ -58,9 +59,16 @@ const SupervisorLogin = () => {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center bg-zinc-50 px-4"
+      className="min-h-screen flex items-center justify-center bg-zinc-50 px-4 relative"
       style={{ backgroundColor: "#144145" }}
     >
+       <button
+              onClick={() => navigate("/")}
+              className="absolute top-6 left-6 flex items-center text-white hover:text-green-50 transition"
+            >
+              <FiArrowLeft className="mr-1" size={20} />
+              Back to Landing
+            </button>
       <Card className="w-full max-w-md p-8 rounded-2xl shadow-lg">
         <div className="flex justify-center mb-6">
           <img src={logo} alt="Logo" className="h-16" />

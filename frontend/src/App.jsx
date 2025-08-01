@@ -14,7 +14,6 @@ import AdminLogin from "./pages/AdminPages/adminLogin";
 import InternDashboard from "./pages/InternPages/internDashboard";
 import InternProfilePage from "./pages/InternPages/internProfile";
 import SupervisorDashboard from "./pages/SupervisorPages/SupervisorDashboard";
-import CompanyChats from "./pages/InternPages/companyChat";
 
 // Admin Pages
 import Cohorts from "./pages/AdminPages/cohorts";
@@ -51,7 +50,7 @@ function App() {
 
       <Routes>
         {/* Public Routes */}
-        <Route path="/landing" element={<Home />} />
+        <Route path="/" element={<Home />} />
         <Route path="/apply" element={<Form />} />
         <Route path="/intern-login" element={<InternLogin />} />
         <Route path="/supervisor-login" element={<SupervisorLogin />} />
@@ -68,7 +67,6 @@ function App() {
 
         {/* Intern Dashboard */}
         <Route path="/internDashboard/:id" element={<InternDashboard />} />
-         <Route path="/company-chats" element={<CompanyChats/>} />
          <Route path="/interns/:id/profile" element={<InternProfilePage />} />
 
 
