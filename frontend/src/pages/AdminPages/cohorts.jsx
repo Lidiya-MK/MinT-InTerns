@@ -142,26 +142,26 @@ function Cohorts() {
         setSelectedCohort(cohort);
         setView("cohorts");
       }}
-      className="relative bg-[#1f2324] text-white p-4 rounded-lg shadow-md cursor-pointer hover:bg-[#2e3233] transition-colors"
+      className="relative bg-gradient-to-b from-gray-800 to-gray-900 text-white p-6 rounded-xl shadow-lg cursor-pointer hover:scale-[1.015] transition-transform duration-300 ease-in-out"
     >
-      <h3 className="text-lg font-semibold">{cohort.name}</h3>
-      <p className="text-sm text-gray-300">
-        Start: {new Date(cohort.cohortStart).toLocaleDateString()}
+      <h3 className="text-xl font-bold">{cohort.name}</h3>
+      <p className="text-sm text-gray-400">
+        🗓️ Start: {new Date(cohort.cohortStart).toLocaleDateString()}
       </p>
-      <p className="text-sm text-gray-300">
-        End: {new Date(cohort.cohortEnd).toLocaleDateString()}
+      <p className="text-sm text-gray-400">
+        🛑 End: {new Date(cohort.cohortEnd).toLocaleDateString()}
       </p>
-      <p className="text-sm text-gray-300">Capacity: {cohort.maxInterns}</p>
+      <p className="text-sm text-gray-400">👥 Capacity: {cohort.maxInterns}</p>
 
-      <div className="grid grid-cols-1 gap-2 mt-4">
+      <div className="grid grid-cols-1 gap-3 mt-4">
         <button
           onClick={(e) => {
             e.stopPropagation();
             navigate(`/admin/cohort/${cohort._id}/accepted`);
           }}
-          className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold py-2 px-4 rounded shadow-md transition"
+          className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 rounded-lg transition"
         >
-          → View Accepted Interns
+          ✅ View Accepted Interns
         </button>
 
         <button
@@ -169,21 +169,21 @@ function Cohorts() {
             e.stopPropagation();
             navigate(`/admin/cohort/${cohort._id}/reports`);
           }}
-          className="w-full bg-gradient-to-r from-orange-600 to-orange-800 hover:from-orange-700 hover:to-orange-600 text-white font-semibold py-2 px-4 rounded shadow-md transition"
+          className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 rounded-lg transition"
         >
-          📊 See Reports
+          📊 View Reports
         </button>
       </div>
     </div>
   );
 
   return (
-    <div className="flex min-h-screen bg-[#272a2b] text-white">
+    <div className="flex min-h-screen bg-[#1c1e1f] text-white">
       <Sidebar setView={setView} />
       <main className="flex-1 p-8 overflow-y-auto">
-        <header className="mb-8">
-          <h2 className="text-3xl font-bold">Admin Dashboard</h2>
-          <p className="text-gray-300">Welcome back, Mr. Denber</p>
+        <header className="mb-10">
+          <h2 className="text-4xl font-extrabold mb-1">Admin Dashboard</h2>
+          <p className="text-gray-400 text-sm">Welcome back, Administrator</p>
         </header>
 
         {view === "register-admin" || view === "register-supervisor" ? (
@@ -197,11 +197,11 @@ function Cohorts() {
         ) : view === "settings" ? (
           <Settings />
         ) : !selectedCohort ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {cohorts.length > 0 ? (
               cohorts.map(renderCohortCard)
             ) : (
-              <p>No ongoing cohorts available.</p>
+              <p className="text-gray-400">No ongoing cohorts available.</p>
             )}
           </div>
         ) : (
@@ -214,19 +214,19 @@ function Cohorts() {
                 setAcceptedCount(0);
                 setPendingCount(0);
               }}
-              className="mb-6 px-4 py-2 bg-[#3a3f40] rounded hover:bg-[#4a5052] text-sm"
+              className="mb-6 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm"
             >
               ← Back to Cohorts
             </button>
 
-            <div className="mb-6">
-              <h3 className="text-2xl font-semibold">{selectedCohort.name}</h3>
-              <p className="text-gray-300">
+            <div className="mb-8">
+              <h3 className="text-3xl font-bold mb-1">{selectedCohort.name}</h3>
+              <p className="text-gray-400">
                 {new Date(selectedCohort.cohortStart).toLocaleDateString()} –{" "}
                 {new Date(selectedCohort.cohortEnd).toLocaleDateString()}
               </p>
-              <p className="text-gray-300">Capacity: {selectedCohort.maxInterns}</p>
-              <p className="text-gray-300">Free Slots: {freeSlots}</p>
+              <p className="text-gray-400">👥 Max Interns: {selectedCohort.maxInterns}</p>
+              <p className="text-gray-400">🟢 Free Slots: {freeSlots}</p>
             </div>
 
             <DashboardCards

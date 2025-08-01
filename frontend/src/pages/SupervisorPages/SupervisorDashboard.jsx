@@ -1,10 +1,10 @@
+import { FiKey } from "react-icons/fi";
 import { useEffect, useState } from "react";
-import { useParams, useNavigate,Link } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { FiSearch, FiLogOut } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import defaultAvatar from "../../assets/default-avatar.png";
 import logo from "../../assets/logo.png";
-
 
 export default function SupervisorDashboard() {
   const { supervisorId, cohortId } = useParams();
@@ -17,21 +17,20 @@ export default function SupervisorDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [attendance, setAttendance] = useState({});
   const [absentCounts, setAbsentCounts] = useState({});
-  
+  const [passwordFields, setPasswordFields] = useState({});
+  const [confirmingInternId, setConfirmingInternId] = useState(null); // custom confirmation modal
 
- const getImageUrl = (path) => {
-  if (!path) return defaultAvatar;
-  const fixedPath = path.includes("uploads/")
-    ? path
-    : `/uploads/${path}`;
-  return `http://localhost:5000${fixedPath.replace(/\\/g, "/")}`;
-};
+  const getImageUrl = (path) => {
+    if (!path) return defaultAvatar;
+    const fixedPath = path.includes("uploads/") ? path : `/uploads/${path}`;
+    return `http://localhost:5000${fixedPath.replace(/\\/g, "/")}`;
+  };
 
-
-    const getImageUrl2 = (path) => {
+  const getImageUrl2 = (path) => {
     if (!path) return defaultAvatar;
     return `http://localhost:5000/${path.replace(/\\/g, "/")}`;
   };
+
   useEffect(() => {
     const fetchSupervisor = async () => {
       try {
@@ -43,17 +42,13 @@ export default function SupervisorDashboard() {
         const data = await res.json();
         if (!res.ok) throw new Error(data?.message);
         setSupervisor(data);
-
-        // Show welcome toast only once on first load
-       
       } catch (err) {
-        console.error("Failed to load supervisor:", err.message);
-        toast.error("Failed to load supervisor info.");
+        toast.error("Failed to load supervisor info.",err);
       }
     };
 
     if (supervisorId) fetchSupervisor();
-  },);
+  }, []);
 
   useEffect(() => {
     const fetchInterns = async () => {
@@ -74,6 +69,7 @@ export default function SupervisorDashboard() {
 
         const initialAttendance = {};
         const absentCountMap = {};
+        const initialPasswordFields = {};
 
         data.forEach((intern) => {
           const today = new Date();
@@ -89,17 +85,22 @@ export default function SupervisorDashboard() {
             ? todayRecord.attendanceStatus === "present"
             : true;
 
-          const absentDays = intern.attendanceRecords?.filter(
+          absentCountMap[intern._id] = intern.attendanceRecords?.filter(
             (record) => record.attendanceStatus === "absent"
           ).length;
 
-          absentCountMap[intern._id] = absentDays || 0;
+          initialPasswordFields[intern._id] = {
+            show: false,
+            newPassword: "",
+            confirmPassword: "",
+          };
         });
 
         setAttendance(initialAttendance);
         setAbsentCounts(absentCountMap);
+        setPasswordFields(initialPasswordFields);
       } catch (err) {
-        toast.error("Error fetching interns.", err);
+        toast.error("Error fetching interns.",err);
       } finally {
         setLoading(false);
       }
@@ -147,6 +148,62 @@ export default function SupervisorDashboard() {
     }
   };
 
+  const togglePasswordField = (internId) => {
+    setPasswordFields((prev) => ({
+      ...prev,
+      [internId]: {
+        ...prev[internId],
+        show: !prev[internId].show,
+        newPassword: "",
+        confirmPassword: "",
+      },
+    }));
+  };
+
+  const handlePasswordChange = (internId, key, value) => {
+    setPasswordFields((prev) => ({
+      ...prev,
+      [internId]: {
+        ...prev[internId],
+        [key]: value,
+      },
+    }));
+  };
+
+  const updatePassword = (internId) => {
+    const { newPassword, confirmPassword } = passwordFields[internId];
+    if (newPassword.length < 6) return toast.error("Password must be 6 characters or more.");
+    if (newPassword !== confirmPassword) return toast.error("Passwords do not match.");
+    setConfirmingInternId(internId);
+  };
+
+  const confirmPasswordUpdate = async (internId) => {
+    const token = localStorage.getItem("supervisorToken");
+    try {
+      const res = await fetch(
+        `http://localhost:5000/api/supervisor/intern/${internId}/change-password`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ newPassword: passwordFields[internId].newPassword }),
+        }
+      );
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Password update failed");
+
+      toast.success("Password updated successfully.");
+      togglePasswordField(internId);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setConfirmingInternId(null);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("supervisorToken");
     toast.success("Logged out successfully");
@@ -156,67 +213,55 @@ export default function SupervisorDashboard() {
   return (
     <div className="min-h-screen bg-[#1a1a1a] text-white">
       {/* Header */}
-<header className="bg-white text-black py-4 px-6 flex items-center justify-between rounded-b-3xl shadow-md">
-<div className="flex items-center gap-4">
-  <img
-    src={getImageUrl(supervisor?.profilePicture)}
-    alt="Supervisor"
-    className="h-12 w-12 rounded-full object-cover border border-gray-400 cursor-pointer"
-    onError={(e) => {
-      e.target.onerror = null;
-      e.target.src = defaultAvatar;
-    }}
-    onClick={() =>
-      navigate(`/updateProfile/${supervisorId}/${cohortId}`)
-    }
-    title="View/Edit Profile"
-  />
-  <div>
-    <p className="text-lg font-semibold">
-      {supervisor?.name || "Supervisor"}
-    </p>
-    <p className="text-sm text-gray-600">{supervisor?.email || ""}</p>
-  </div>
-</div>
+      <header className="bg-white text-black py-4 px-6 flex items-center justify-between rounded-b-3xl shadow-md">
+        <div className="flex items-center gap-4">
+          <img
+            src={getImageUrl(supervisor?.profilePicture)}
+            alt="Supervisor"
+            className="h-12 w-12 rounded-full object-cover border border-gray-400 cursor-pointer"
+            onClick={() => navigate(`/updateProfile/${supervisorId}/${cohortId}`)}
+          />
+          <div>
+            <p className="text-lg font-semibold">{supervisor?.name || "Supervisor"}</p>
+            <p className="text-sm text-gray-600">{supervisor?.email || ""}</p>
+          </div>
+        </div>
+        <div className="flex gap-4 items-center">
+          <button
+            className="px-3 py-1.5 bg-[#144145] text-white rounded-xl text-sm font-semibold"
+            onClick={() =>
+              navigate(`/supervisorDashboard/${supervisorId}/${cohortId}`)
+            }
+          >
+            Interns
+          </button>
+          <button
+            className="px-3 py-1.5 border border-[#144145] text-[#144145] rounded-xl text-sm font-semibold hover:bg-[#144145] hover:text-white"
+            onClick={() =>
+              navigate(`/supervisorProjects/${supervisorId}/${cohortId}`)
+            }
+          >
+            Projects
+          </button>
+          <Link
+            to={`/supervisor/${supervisorId}/${cohortId}/profile-update`}
+            className="px-3 py-1.5 border border-[#144145] text-[#144145] rounded-xl text-sm font-semibold hover:bg-[#144145] hover:text-white"
+          >
+            Update Profile
+          </Link>
 
-<div className="flex gap-4 items-center">
-  <button
-    className="px-3 py-1.5 bg-[#144145] text-white rounded-xl text-sm font-semibold"
-    onClick={() =>
-      navigate(`/supervisorDashboard/${supervisorId}/${cohortId}`)
-    }
-  >
-    Interns
-  </button>
-  <button
-    className="px-3 py-1.5 border border-[#144145] text-[#144145] rounded-xl text-sm font-semibold hover:bg-[#144145] hover:text-white"
-    onClick={() =>
-      navigate(`/supervisorProjects/${supervisorId}/${cohortId}`)
-    }
-  >
-    Projects
-  </button>
-  <Link
-    to={`/supervisor/${supervisorId}/${cohortId}/profile-update`}
-    className="px-3 py-1.5 border border-[#144145] text-[#144145] rounded-xl text-sm font-semibold hover:bg-[#144145] hover:text-white"
-  >
-    Update Profile
-  </Link>
-
-  <div className="flex items-center gap-4">
-    <button
-      onClick={handleLogout}
-      className="text-[#144145] hover:text-red-500 transition-colors duration-200"
-      title="Logout"
-    >
-      <FiLogOut size={20} />
-    </button>
-    <img src={logo} alt="System Logo" className="h-10 w-auto" />
-  </div>
-</div>
-
-</header>
-
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleLogout}
+              className="text-[#144145] hover:text-red-500 transition-colors duration-200"
+              title="Logout"
+            >
+              <FiLogOut size={20} />
+            </button>
+            <img src={logo} alt="System Logo" className="h-10 w-auto" />
+          </div>
+        </div>
+      </header>
 
       {/* Main */}
       <main className="p-6">
@@ -238,11 +283,23 @@ export default function SupervisorDashboard() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
             {filteredInterns.map((intern) => (
-              <div key={intern._id} className="bg-[#2a2a2a] p-4 rounded-xl shadow space-y-2">
+              <div
+                key={intern._id}
+                className="bg-[#2a2a2a] p-4 rounded-xl shadow space-y-2 relative"
+              >
+                {/* 🔑 Key Icon */}
+                <button
+                  onClick={() => togglePasswordField(intern._id)}
+                  className="absolute top-2 right-2 text-yellow-500 hover:text-yellow-300"
+                  title="Change Password"
+                >
+                  <FiKey size={18} />
+                </button>
+
                 <div className="flex items-center gap-4">
                   <img
                     src={getImageUrl2(intern.profilePicture)}
-                    alt={intern.name || "Intern"}
+                    alt={intern.name}
                     className="w-14 h-14 rounded-full object-cover border border-gray-500"
                     onError={(e) => {
                       e.target.onerror = null;
@@ -250,12 +307,13 @@ export default function SupervisorDashboard() {
                     }}
                   />
                   <div>
-                    <p className="font-semibold">{intern.name || "Unnamed Intern"}</p>
-                    <p className="text-sm text-gray-400">{intern.email || "No email"}</p>
+                    <p className="font-semibold">{intern.name}</p>
+                    <p className="text-sm text-gray-400">{intern.email}</p>
                     <p className="text-sm text-gray-400">Absent Days: {absentCounts[intern._id]}</p>
-                    <p className="text-sm text-gray-400">CGPA: {intern.CGPA ?? "N/A"}</p>
+                    <p className="text-sm text-gray-400">CGPA: {intern.CGPA}</p>
                   </div>
                 </div>
+
                 <div className="flex items-center justify-between">
                   <span
                     className={`text-xs font-semibold ${
@@ -277,11 +335,64 @@ export default function SupervisorDashboard() {
                     ></div>
                   </button>
                 </div>
+
+                {passwordFields[intern._id]?.show && (
+                  <div className="mt-2">
+                    <input
+                      type="password"
+                      placeholder="New Password"
+                      className="w-full mb-1 p-2 text-sm rounded bg-[#1f1f1f] border border-yellow-500 text-white"
+                      value={passwordFields[intern._id]?.newPassword}
+                      onChange={(e) =>
+                        handlePasswordChange(intern._id, "newPassword", e.target.value)
+                      }
+                    />
+                    <input
+                      type="password"
+                      placeholder="Confirm New Password"
+                      className="w-full mb-1 p-2 text-sm rounded bg-[#1f1f1f] border border-yellow-500 text-white"
+                      value={passwordFields[intern._id]?.confirmPassword}
+                      onChange={(e) =>
+                        handlePasswordChange(intern._id, "confirmPassword", e.target.value)
+                      }
+                    />
+                    <button
+                      onClick={() => updatePassword(intern._id)}
+                      className="mt-1 w-full py-1.5 rounded bg-yellow-500 text-black font-semibold text-sm hover:bg-yellow-600"
+                    >
+                      Update Password
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         )}
       </main>
+
+      {/* Modal Confirmation */}
+      {confirmingInternId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white text-black rounded-xl p-6 space-y-4 max-w-sm w-full text-center">
+            <h2 className="text-lg font-semibold">Confirm Password Update</h2>
+            <p>Are you sure you want to change this intern's password?</p>
+            <div className="flex justify-center gap-4 mt-4">
+              <button
+                onClick={() => confirmPasswordUpdate(confirmingInternId)}
+                className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 rounded font-semibold"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => setConfirmingInternId(null)}
+                className="px-4 py-2 border border-gray-400 hover:bg-gray-100 rounded"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
