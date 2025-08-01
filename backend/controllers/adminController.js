@@ -78,6 +78,35 @@ exports.getProjectsByCohort = async (req, res) => {
 };
 
 
+
+// Update supervisor password (admin only)
+exports.updateSupervisorPassword = async (req, res) => {
+  try {
+    const { supervisorId } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ message: "New password must be at least 6 characters." });
+    }
+
+    const supervisor = await Supervisor.findById(supervisorId);
+    if (!supervisor) {
+      return res.status(404).json({ message: "Supervisor not found" });
+    }
+
+    // Hash the new password before saving
+    const salt = await bcrypt.genSalt(10);
+    supervisor.password = await bcrypt.hash(newPassword, salt);
+
+    await supervisor.save();
+
+    res.status(200).json({ message: "Supervisor password updated successfully." });
+  } catch (error) {
+    console.error("Error updating supervisor password:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 exports.getAcceptedInternsByCohort = async (req, res) => {
   try {
     const { cohortId } = req.params;
