@@ -5,8 +5,8 @@ const { protect } = require('../middleware/supervisorAuthMiddleware');
 const { loginSupervisor,getInternsByCohort,createProject, getProjectsBySupervisor,
     getProjectById,getMilestoneById,
 toggleProjectStatus, updateAttendance,
-toggleProjectOutcome,updateProject, deleteProject, getSupervisorById,updateSupervisorProfile
-} = require('../controllers/supervisorController');
+toggleProjectOutcome,updateProject, deleteProject, getSupervisorById,updateSupervisorProfile, 
+changeInternPassword} = require('../controllers/supervisorController');
 
 router.post('/login', loginSupervisor);
 router.get('/cohort/:cohortId/interns', protect, getInternsByCohort);
@@ -21,6 +21,7 @@ router.delete('/project/:projectId', protect, deleteProject);
 router.put('/intern/:internId/attendance', protect, updateAttendance);
 router.get('/:supervisorId', protect, getSupervisorById); 
 router.put('/:supervisorId/update', protect, upload.single("profilePicture"), updateSupervisorProfile);
+router.put('/intern/:internId/change-password', protect, changeInternPassword);
 
 
 module.exports = router;
